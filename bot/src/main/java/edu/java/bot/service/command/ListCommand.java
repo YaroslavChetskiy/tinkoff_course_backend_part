@@ -18,16 +18,6 @@ public class ListCommand extends BaseCommand {
     }
 
     @Override
-    public String command() {
-        return COMMAND;
-    }
-
-    @Override
-    public String description() {
-        return DESCRIPTION;
-    }
-
-    @Override
     public SendMessage handle(Update update) {
         var id = update.message().chat().id();
         var user = storage.findById(id);
@@ -42,5 +32,15 @@ public class ListCommand extends BaseCommand {
             }
         }
         return new SendMessage(id, EMPTY_LINK_LIST);
+    }
+
+    @Override
+    public String command() {
+        return COMMAND;
+    }
+
+    @Override
+    public String description() {
+        return DESCRIPTION;
     }
 }

@@ -34,16 +34,16 @@ public class SimpleMessageProcessor implements UserMessageProcessor {
     }
 
     @Override
-    public List<? extends Command> commands() {
-        return commands;
-    }
-
-    @Override
     public SendMessage process(Update update) {
         Optional<Command> command = commands.stream()
             .filter(c -> c.supports(update))
             .findFirst();
         return command.map(value -> value.handle(update))
-            .orElse(new SendMessage(update.message().chat().id(), UNKNOWN_COMMAND));
+            .orElseGet(() -> new SendMessage(update.message().chat().id(), UNKNOWN_COMMAND));
+    }
+
+    @Override
+    public List<? extends Command> commands() {
+        return commands;
     }
 }

@@ -1,10 +1,11 @@
 package edu.java.bot.service.bot;
 
+import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.BotCommand;
 import com.pengrad.telegrambot.model.Chat;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.Update;
-import edu.java.bot.configuration.ApplicationConfig;
+import com.pengrad.telegrambot.request.SetMyCommands;
 import edu.java.bot.service.command.Command;
 import edu.java.bot.service.messageProcessor.SimpleMessageProcessor;
 import java.util.List;
@@ -20,7 +21,7 @@ class ScrapperBotTest {
     private static final SimpleMessageProcessor PROCESSOR = mock(SimpleMessageProcessor.class);
 
     private static final ScrapperBot BOT = new ScrapperBot(
-        new ApplicationConfig(""),
+        new TelegramBot(""),
         PROCESSOR
     );
 
@@ -55,9 +56,9 @@ class ScrapperBotTest {
 
         Mockito.<List<? extends Command>>when(PROCESSOR.commands()).thenReturn(commands);
 
-        var actualResult = BOT.createMenu();
+        SetMyCommands actualResult = BOT.createMenu();
 
-        var parameters = actualResult.getParameters().get("commands");
+        BotCommand[] parameters = (BotCommand[]) actualResult.getParameters().get("commands");
 
         assertThat(parameters).isEqualTo(new BotCommand[] {botCommand1, botCommand2});
     }

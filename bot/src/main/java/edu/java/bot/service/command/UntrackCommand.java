@@ -22,16 +22,6 @@ public class UntrackCommand extends BaseCommand {
     }
 
     @Override
-    public String command() {
-        return COMMAND;
-    }
-
-    @Override
-    public String description() {
-        return DESCRIPTION;
-    }
-
-    @Override
     public SendMessage handle(Update update) {
         var message = update.message();
         var split = message.text().split("\\s+", 2);
@@ -55,5 +45,15 @@ public class UntrackCommand extends BaseCommand {
                 return new SendMessage(id, UNSUPPORTED_LINK);
             }
         }
+    }
+
+    @Override
+    public String command() {
+        return COMMAND;
+    }
+
+    @Override
+    public String description() {
+        return DESCRIPTION;
     }
 }

@@ -7,7 +7,6 @@ import com.pengrad.telegrambot.request.BaseRequest;
 import com.pengrad.telegrambot.request.GetUpdates;
 import com.pengrad.telegrambot.request.SetMyCommands;
 import com.pengrad.telegrambot.response.BaseResponse;
-import edu.java.bot.configuration.ApplicationConfig;
 import edu.java.bot.service.command.Command;
 import edu.java.bot.service.messageProcessor.UserMessageProcessor;
 import java.util.List;
@@ -21,9 +20,9 @@ public class ScrapperBot implements Bot {
 
     private final UserMessageProcessor processor;
 
-    public ScrapperBot(ApplicationConfig config, UserMessageProcessor processor) {
-        bot = new TelegramBot(config.telegramToken());
+    public ScrapperBot(TelegramBot telegramBot, UserMessageProcessor processor) {
         this.processor = processor;
+        bot = telegramBot;
         bot.setUpdatesListener(this);
         execute(createMenu());
     }

@@ -2,12 +2,14 @@ package edu.java.bot.service.command;
 
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
+import edu.java.bot.model.entity.Link;
 import edu.java.bot.model.entity.User;
 import edu.java.bot.service.messageProcessor.UserMessageProcessor;
 import edu.java.bot.service.storage.UserStorage;
 import edu.java.bot.util.LinkUtil;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Optional;
 
 public class TrackCommand extends BaseCommand {
 
@@ -43,18 +45,19 @@ public class TrackCommand extends BaseCommand {
                 if (!LinkUtil.supports(uri)) {
                     return new SendMessage(id, UNSUPPORTED_LINK);
                 }
-                var link = LinkUtil.parse(uri);
+                Link link = LinkUtil.parse(uri);
 
-                var user = storage.findById(id);
-                if (user.isPresent()) {
-                    user.get().getLinks().add(link);
-                } else {
-                    var newUser = User.builder()
-                        .id(id)
-                        .build();
-                    newUser.getLinks().add(link);
-                    storage.addUser(newUser);
-                }
+                Optional<User> user = storage.findById(id);
+
+                user.orElseGet(() -> {
+                        var newUser = User.builder()
+                            .id(id)
+                            .build();
+                        storage.addUser(newUser);
+                        return newUser;
+                    }
+                ).getLinks().add(link);
+
                 return new SendMessage(id, SUCCESS_TRACKING);
             } catch (URISyntaxException e) {
                 return new SendMessage(id, UNSUPPORTED_LINK);

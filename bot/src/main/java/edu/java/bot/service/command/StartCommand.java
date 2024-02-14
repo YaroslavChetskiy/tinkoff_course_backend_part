@@ -17,6 +17,11 @@ public class StartCommand extends BaseCommand {
     }
 
     @Override
+    public SendMessage handle(Update update) {
+        return new SendMessage(update.message().chat().id(), START_MESSAGE);
+    }
+
+    @Override
     public String command() {
         return COMMAND;
     }
@@ -24,11 +29,6 @@ public class StartCommand extends BaseCommand {
     @Override
     public String description() {
         return DESCRIPTION;
-    }
-
-    @Override
-    public SendMessage handle(Update update) {
-        return new SendMessage(update.message().chat().id(), START_MESSAGE);
     }
 
 }

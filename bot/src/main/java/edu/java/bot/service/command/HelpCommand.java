@@ -15,6 +15,15 @@ public class HelpCommand extends BaseCommand {
     }
 
     @Override
+    public SendMessage handle(Update update) {
+        StringBuilder stringBuilder = new StringBuilder("Список команд:\n");
+        for (Command command : processor.commands()) {
+            stringBuilder.append("- ").append(command).append("\n");
+        }
+        return new SendMessage(update.message().chat().id(), stringBuilder.toString());
+    }
+
+    @Override
     public String command() {
         return COMMAND;
     }
@@ -22,14 +31,5 @@ public class HelpCommand extends BaseCommand {
     @Override
     public String description() {
         return DESCRIPTION;
-    }
-
-    @Override
-    public SendMessage handle(Update update) {
-        StringBuilder stringBuilder = new StringBuilder("Список команд:\n");
-        for (Command command : processor.commands()) {
-            stringBuilder.append("- ").append(command).append("\n");
-        }
-        return new SendMessage(update.message().chat().id(), stringBuilder.toString());
     }
 }

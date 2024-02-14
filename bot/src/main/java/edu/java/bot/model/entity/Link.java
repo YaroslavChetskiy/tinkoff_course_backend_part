@@ -1,21 +1,9 @@
 package edu.java.bot.model.entity;
 
 import java.net.URI;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class Link {
-
-    private String protocol;
-    private String hostname;
-    private String path;
-    private String query;
-    private String fragment;
+public record Link(String protocol, String hostname, String path, String query, String fragment) {
 
     @SneakyThrows @Override
     public String toString() {

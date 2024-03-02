@@ -19,7 +19,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers
 public abstract class IntegrationTest {
-    private static final Path LOG_PATH = Path.of("src/test/java/edu/java/scrapper/log.log");
     private static final String MIGRATIONS_LIQUIBASE = "migrations/liquibase";
     public static PostgreSQLContainer<?> POSTGRES;
 

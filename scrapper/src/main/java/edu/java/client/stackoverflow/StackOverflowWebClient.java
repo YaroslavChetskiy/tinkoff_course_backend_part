@@ -39,7 +39,7 @@ public class StackOverflowWebClient implements StackOverflowClient {
         try {
             var uri = new URI(link.getUrl());
             String[] pathParts = uri.getPath().split("/");
-            Long questionId = Long.parseLong(pathParts[pathParts.length - 1]);
+            Long questionId = Long.parseLong(pathParts[pathParts.length - 2]);
 
             QuestionResponse response = fetchQuestion(questionId);
             return response.items().getFirst().lastUpdateTime();

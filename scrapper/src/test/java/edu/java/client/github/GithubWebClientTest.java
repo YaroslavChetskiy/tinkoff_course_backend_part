@@ -1,6 +1,8 @@
 package edu.java.client.github;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
+import edu.java.dto.entity.Link;
+import edu.java.dto.entity.LinkType;
 import edu.java.dto.github.RepositoryResponse;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -61,6 +63,30 @@ class GithubWebClientTest {
         var repositoryResponse = client.fetchRepository(OWNER, REPOSITORY);
 
         assertThat(repositoryResponse).isEqualTo(EXPECTED_RESPONSE);
+    }
+
+    @Test
+    @DisplayName("Парсинг ссылки и получение времени последнего обновления")
+    void getCorrectParsingAndLastUpdateTimeInCheckForUpdate() {
+        wireMockServer.stubFor(get(urlEqualTo(URL))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody(RESPONSE_BODY))
+        );
+
+        GithubClient client = new GithubWebClient(wireMockServer.baseUrl());
+        OffsetDateTime actualResult = client.checkForUpdate(new Link(
+                1L,
+                "https://github.com/YaroslavChetskiy/tinkoff_course_backend_part",
+                LinkType.GITHUB_REPO,
+                null,
+                null,
+                null
+            )
+        );
+
+        assertThat(actualResult).isEqualTo(EXPECTED_RESPONSE.lastUpdateTime());
     }
 
     @AfterAll

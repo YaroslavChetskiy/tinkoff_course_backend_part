@@ -1,9 +1,8 @@
 package edu.java.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.java.exception.ChatAlreadyRegisteredException;
 import edu.java.exception.ChatNotFoundException;
-import edu.java.service.ChatService;
+import edu.java.service.JdbcChatService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,7 +28,7 @@ class ChatControllerTest {
     private static final Long CHAT_ID = 1L;
 
     @MockBean
-    private ChatService chatService;
+    private JdbcChatService chatService;
 
     @Autowired
     private WebApplicationContext webApplicationContext;

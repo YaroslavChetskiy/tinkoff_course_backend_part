@@ -1,6 +1,10 @@
 package edu.java.client.stackoverflow;
 
+import edu.java.dto.entity.Link;
 import edu.java.dto.stackoverflow.QuestionResponse;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.time.OffsetDateTime;
 import org.springframework.web.reactive.function.client.WebClient;
 
 public class StackOverflowWebClient implements StackOverflowClient {
@@ -28,5 +32,19 @@ public class StackOverflowWebClient implements StackOverflowClient {
             .retrieve()
             .bodyToMono(QuestionResponse.class)
             .block();
+    }
+
+    @Override
+    public OffsetDateTime checkForUpdate(Link link) {
+        try {
+            var uri = new URI(link.getUrl());
+            String[] pathParts = uri.getPath().split("/");
+            Long questionId = Long.parseLong(pathParts[pathParts.length - 1]);
+
+            QuestionResponse response = fetchQuestion(questionId);
+            return response.items().getFirst().lastUpdateTime();
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Невалидная ссылка", e);
+        }
     }
 }

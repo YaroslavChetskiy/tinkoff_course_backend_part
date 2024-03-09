@@ -1,6 +1,10 @@
 package edu.java.client.github;
 
+import edu.java.dto.entity.Link;
 import edu.java.dto.github.RepositoryResponse;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.time.OffsetDateTime;
 import org.springframework.web.reactive.function.client.WebClient;
 
 public class GithubWebClient implements GithubClient {
@@ -28,5 +32,19 @@ public class GithubWebClient implements GithubClient {
             .retrieve()
             .bodyToMono(RepositoryResponse.class)
             .block();
+    }
+
+    @Override
+    public OffsetDateTime checkForUpdate(Link link) {
+        try {
+            URI uri = new URI(link.getUrl());
+            String[] pathParts = uri.getPath().split("/");
+
+            RepositoryResponse response = fetchRepository(pathParts[1], pathParts[2]);
+
+            return response.lastUpdateTime();
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Невалидная ссылка", e);
+        }
     }
 }

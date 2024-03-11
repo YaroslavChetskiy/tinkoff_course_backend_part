@@ -7,54 +7,16 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import static edu.java.domain.repository.sqlRequest.ChatLinkSqlRequest.ADD_LINK_TO_CHAT_SQL;
+import static edu.java.domain.repository.sqlRequest.ChatLinkSqlRequest.FIND_ALL_CHAT_IDS_BY_LINK_ID_SQL;
+import static edu.java.domain.repository.sqlRequest.ChatLinkSqlRequest.FIND_ALL_LINKS_BY_CHAT_ID_SQL;
+import static edu.java.domain.repository.sqlRequest.ChatLinkSqlRequest.IS_LINK_TRACKED_IN_CHAT_SQL;
+import static edu.java.domain.repository.sqlRequest.ChatLinkSqlRequest.IS_LINK_TRACKED_SQL;
+import static edu.java.domain.repository.sqlRequest.ChatLinkSqlRequest.REMOVE_LINK_FROM_CHAT_SQL;
 
 @Repository
 @RequiredArgsConstructor
 public class JdbcChatLinkRepository implements ChatLinkRepository {
-
-    private static final String ADD_LINK_TO_CHAT_SQL = """
-        INSERT INTO scrapper_schema.chat_link
-            (chat_id, link_id)
-        VALUES (?, ?)
-        """;
-
-    private static final String REMOVE_LINK_FROM_CHAT_SQL = """
-        DELETE FROM scrapper_schema.chat_link
-        WHERE chat_id = ? AND link_id = ?
-        """;
-
-    private static final String IS_LINK_TRACKED_IN_CHAT_SQL = """
-        SELECT EXISTS (
-            SELECT 1 FROM scrapper_schema.chat_link
-            WHERE chat_id = ? AND link_id = ?
-        )
-        """;
-
-    private static final String IS_LINK_TRACKED_SQL = """
-        SELECT EXISTS (
-            SELECT 1 FROM scrapper_schema.chat_link
-            WHERE link_id = ?
-        )
-        """;
-
-    private static final String FIND_ALL_LINKS_BY_CHAT_ID_SQL = """
-        SELECT
-            l.id,
-            l.url,
-            l.type,
-            l.checked_at,
-            l.last_updated_at,
-            l.created_at
-        FROM scrapper_schema.link l
-        JOIN
-            scrapper_schema.chat_link cl ON l.id = cl.link_id
-        WHERE cl.chat_id = ?
-        """;
-
-    private static final String FIND_ALL_CHAT_IDS_BY_LINK_ID_SQL = """
-        SELECT chat_id FROM scrapper_schema.chat_link
-        WHERE link_id = ?
-        """;
 
     private final JdbcTemplate jdbcTemplate;
 

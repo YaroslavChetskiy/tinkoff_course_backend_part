@@ -39,8 +39,12 @@ public class JdbcLinkService implements LinkService {
 
         if (link != null && chatLinkRepository.isLinkTrackedInChat(chatId, link.getId())) {
             throw new LinkAlreadyTrackedException("Ссылка уже отслеживается");
-        } else if (link == null) {
-            linkRepository.saveLink(new Link(
+        }
+
+        Link savedLink = link;
+
+        if (link == null) {
+            savedLink = linkRepository.saveLink(new Link(
                     null,
                     request.link(),
                     LinkType.resolve(request.link()),
@@ -50,8 +54,6 @@ public class JdbcLinkService implements LinkService {
                 )
             );
         }
-
-        Link savedLink = linkRepository.findLinkByUrl(request.link());
 
         chatLinkRepository.addLinkToChat(chatId, savedLink.getId());
         return new LinkResponse(savedLink.getId(), savedLink.getUrl());

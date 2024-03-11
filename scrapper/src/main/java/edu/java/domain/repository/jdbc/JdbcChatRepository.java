@@ -6,39 +6,28 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import static edu.java.domain.repository.sqlRequest.ChatSqlRequest.DELETE_CHAT_SQL;
+import static edu.java.domain.repository.sqlRequest.ChatSqlRequest.FIND_BY_ID_SQL;
+import static edu.java.domain.repository.sqlRequest.ChatSqlRequest.SAVE_CHAT_SQL;
 import static edu.java.util.RepositoryUtil.ZONE_OFFSET;
 
 @Repository
 @RequiredArgsConstructor
 public class JdbcChatRepository implements ChatRepository {
 
-    private static final String SAVE_CHAT_SQL = """
-        INSERT INTO scrapper_schema.chat
-            (id)
-        VALUES
-            (?)
-        """;
-
-    private static final String DELETE_CHAT_SQL = """
-        DELETE FROM scrapper_schema.chat
-        WHERE id = ?
-        """;
-
-    private static final String FIND_BY_ID_SQL = """
-        SELECT id, created_at FROM scrapper_schema.chat
-        WHERE id = ?
-        """;
-
     private final JdbcTemplate jdbcTemplate;
 
     @Override
-    public void saveChat(Chat chat) {
+    public Chat saveChat(Chat chat) {
         jdbcTemplate.update(SAVE_CHAT_SQL, chat.getId());
+        return findById(chat.getId());
     }
 
     @Override
-    public void deleteChat(Long chatId) {
+    public Chat deleteChat(Long chatId) {
+        Chat deletedChat = findById(chatId);
         jdbcTemplate.update(DELETE_CHAT_SQL, chatId);
+        return deletedChat;
     }
 
     @Override

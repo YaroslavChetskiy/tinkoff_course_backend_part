@@ -44,7 +44,7 @@ public class GithubWebClient implements GithubClient {
 
             return response.lastUpdateTime();
         } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Невалидная ссылка", e);
+            throw new IllegalArgumentException("Link url is invalid (Could not parse to URI)" + link.getUrl(), e);
         }
     }
 }

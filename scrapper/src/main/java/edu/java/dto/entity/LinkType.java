@@ -7,7 +7,7 @@ public enum LinkType {
     GITHUB_REPO("https://github.com"),
     STACKOVERFLOW_QUESTION("https://stackoverflow.com"),
 
-    UNKNOWN("");
+    UNKNOWN("Unknown url pattern");
 
     private final String urlPattern;
 

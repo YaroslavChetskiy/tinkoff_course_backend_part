@@ -44,7 +44,7 @@ public class StackOverflowWebClient implements StackOverflowClient {
             QuestionResponse response = fetchQuestion(questionId);
             return response.items().getFirst().lastUpdateTime();
         } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Невалидная ссылка", e);
+            throw new IllegalArgumentException("Link url is invalid (Could not parse to URI)" + link.getUrl(), e);
         }
     }
 }

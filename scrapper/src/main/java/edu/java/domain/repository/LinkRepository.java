@@ -7,9 +7,9 @@ import java.util.List;
 
 public interface LinkRepository {
 
-    void saveLink(Link link);
+    Link saveLink(Link link);
 
-    void deleteLink(String url);
+    Link deleteLink(String url);
 
     void updateLastUpdateAndCheckTime(String url, OffsetDateTime lastUpdatedAt, OffsetDateTime checkedAt);
 

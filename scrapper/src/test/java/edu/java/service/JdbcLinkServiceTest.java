@@ -8,20 +8,24 @@ import edu.java.dto.request.AddLinkRequest;
 import edu.java.dto.request.RemoveLinkRequest;
 import edu.java.dto.response.LinkResponse;
 import edu.java.dto.response.ListLinksResponse;
-import java.time.OffsetDateTime;
-import java.util.List;
 import edu.java.exception.LinkAlreadyTrackedException;
 import edu.java.exception.LinkNotFoundException;
-import org.assertj.core.api.Assertions;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import static edu.java.dto.entity.LinkType.GITHUB_REPO;
-import static edu.java.dto.entity.LinkType.STACKOVERFLOW_QUESTION;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -29,24 +33,9 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class JdbcLinkServiceTest {
 
-    private static final Link LINK = new Link(
-        1L,
-        "https://github.com/example/repo",
-        GITHUB_REPO,
-        OffsetDateTime.now().minusDays(2),
-        OffsetDateTime.now().minusDays(2),
-        null
-    );
+    private static final OffsetDateTime DEFAULT_LAST_UPDATE_AND_CHECK_TIME = OffsetDateTime.now().minusDays(2);
 
-    private static final Link SECOND_LINK = new Link(
-        2L,
-        "https://stackoverflow.com/questions/12345/sample-question",
-        STACKOVERFLOW_QUESTION,
-        OffsetDateTime.now().minusDays(2),
-        OffsetDateTime.now().minusDays(2),
-        null
-    );
-
+    private static final String DEFAULT_URL = "https://github.com/dummy/dummy_repo";
     private static final Chat CHAT = new Chat(1L, OffsetDateTime.now());
 
     @Mock
@@ -58,15 +47,20 @@ class JdbcLinkServiceTest {
     @InjectMocks
     private JdbcLinkService linkService;
 
-    @Test
-    void getAllLinks() {
-        when(chatLinkRepository.findAllLinksByChatId(CHAT.getId())).thenReturn(List.of(LINK, SECOND_LINK));
+    @ParameterizedTest
+    @MethodSource("getArgumentsForGetAllLinksTest")
+    void getAllLinks(int linkCount) {
+        List<Link> links = IntStream.range(1, linkCount + 1).mapToObj(it -> generateLink(
+                it,
+                DEFAULT_URL + it
+            )
+        ).toList();
+
+        when(chatLinkRepository.findAllLinksByChatId(CHAT.getId())).thenReturn(links);
+
         var expectedResult = new ListLinksResponse(
-            List.of(
-                new LinkResponse(1L, "https://github.com/example/repo"),
-                new LinkResponse(2L, "https://stackoverflow.com/questions/12345/sample-question")
-            ),
-            2
+            links.stream().map(link -> new LinkResponse(link.getId(), link.getUrl())).toList(),
+            linkCount
         );
 
         var actualResult = linkService.getAllLinks(CHAT.getId());
@@ -74,43 +68,101 @@ class JdbcLinkServiceTest {
         assertThat(actualResult).isEqualTo(expectedResult);
     }
 
-    @Test
-    void addLink() {
-        AddLinkRequest request = new AddLinkRequest(LINK.getUrl());
-        when(linkRepository.findLinkByUrl(request.link())).thenReturn(LINK);
-        when(chatLinkRepository.isLinkTrackedInChat(CHAT.getId(), LINK.getId())).thenReturn(true);
+    static Stream<Arguments> getArgumentsForGetAllLinksTest() {
+        return Stream.of(
+            Arguments.of(1),
+            Arguments.of(2),
+            Arguments.of(3),
+            Arguments.of(4)
+        );
+    }
 
-        assertThrows(LinkAlreadyTrackedException.class, () -> linkService.addLink(CHAT.getId(), request));
+    @ParameterizedTest
+    @MethodSource("getArgumentsForAddExistingInDatabaseLinkToChatTest")
+    void addExistingInDatabaseLinkToChat(Link link, boolean isLinkTrackedInChat) {
+        AddLinkRequest request = new AddLinkRequest(link.getUrl());
 
-        AddLinkRequest request2 = new AddLinkRequest(SECOND_LINK.getUrl());
-        when(linkRepository.findLinkByUrl(request2.link())).thenReturn(SECOND_LINK);
-        when(chatLinkRepository.isLinkTrackedInChat(CHAT.getId(), SECOND_LINK.getId())).thenReturn(false);
+        when(linkRepository.findLinkByUrl(request.link())).thenReturn(link);
+        when(chatLinkRepository.isLinkTrackedInChat(CHAT.getId(), link.getId())).thenReturn(isLinkTrackedInChat);
 
-        var expectedResult = new LinkResponse(SECOND_LINK.getId(), SECOND_LINK.getUrl());
-        var actualResult = linkService.addLink(CHAT.getId(), request2);
+        if (isLinkTrackedInChat) {
+            assertThrows(LinkAlreadyTrackedException.class, () -> linkService.addLink(CHAT.getId(), request));
+        } else {
+            var actualResult = linkService.addLink(CHAT.getId(), request);
+            var expectedResult = new LinkResponse(link.getId(), request.link());
+            assertThat(actualResult).isEqualTo(expectedResult);
+            verify(chatLinkRepository, times(1)).addLinkToChat(CHAT.getId(), link.getId());
+        }
+    }
 
-        verify(chatLinkRepository, times(1)).addLinkToChat(CHAT.getId(), SECOND_LINK.getId());
-        assertThat(actualResult).isEqualTo(expectedResult);
+    static Stream<Arguments> getArgumentsForAddExistingInDatabaseLinkToChatTest() {
+        return Stream.of(
+            Arguments.of(generateLink(1L, DEFAULT_URL), true),
+            Arguments.of(generateLink(2L, DEFAULT_URL + 2), true),
+            Arguments.of(generateLink(1L, DEFAULT_URL), false),
+            Arguments.of(generateLink(2L, DEFAULT_URL + 2), false)
+        );
     }
 
     @Test
-    void removeLink() {
-        RemoveLinkRequest request = new RemoveLinkRequest(LINK.getUrl());
-        when(linkRepository.findLinkByUrl(request.link())).thenReturn(LINK);
-        when(chatLinkRepository.isLinkTrackedInChat(CHAT.getId(), LINK.getId())).thenReturn(false);
+    void addNullLink() {
+        AddLinkRequest request = new AddLinkRequest(DEFAULT_URL);
 
-        assertThrows(LinkNotFoundException.class, () -> linkService.removeLink(CHAT.getId(), request));
+        var savedLink = generateLink(1L, DEFAULT_URL);
 
-        RemoveLinkRequest request2 = new RemoveLinkRequest(SECOND_LINK.getUrl());
-        when(linkRepository.findLinkByUrl(request2.link())).thenReturn(SECOND_LINK);
-        when(chatLinkRepository.isLinkTrackedInChat(CHAT.getId(), SECOND_LINK.getId())).thenReturn(true);
-        when(chatLinkRepository.isLinkTracked(SECOND_LINK.getId())).thenReturn(false);
+        when(linkRepository.findLinkByUrl(request.link())).thenReturn(null);
+        when(linkRepository.saveLink(any())).thenReturn(savedLink);
 
-        var expectedResult = new LinkResponse(SECOND_LINK.getId(), SECOND_LINK.getUrl());
-        var actualResult = linkService.removeLink(CHAT.getId(), request2);
+        var actualResult = linkService.addLink(CHAT.getId(), request);
+        var expectedResult = new LinkResponse(savedLink.getId(), savedLink.getUrl());
 
-        verify(chatLinkRepository, times(1)).removeLinkFromChat(CHAT.getId(), SECOND_LINK.getId());
-        verify(linkRepository, times(1)).deleteLink(SECOND_LINK.getUrl());
         assertThat(actualResult).isEqualTo(expectedResult);
+        verify(linkRepository, times(1)).saveLink(any());
+    }
+
+    @ParameterizedTest
+    @MethodSource("getArgumentsForRemoveLinkTest")
+    void removeLink(Link link, boolean isLinkTrackedInChat, boolean isLinkTracked) {
+        RemoveLinkRequest request = new RemoveLinkRequest(link == null ? DEFAULT_URL : link.getUrl());
+        when(linkRepository.findLinkByUrl(request.link())).thenReturn(link);
+        if (link != null) {
+            when(chatLinkRepository.isLinkTrackedInChat(CHAT.getId(), link.getId())).thenReturn(isLinkTrackedInChat);
+        }
+        if (link == null || !isLinkTrackedInChat) {
+            assertThrows(LinkNotFoundException.class, () -> linkService.removeLink(CHAT.getId(), request));
+        } else {
+            when(chatLinkRepository.isLinkTracked(link.getId())).thenReturn(isLinkTracked);
+
+            var expectedResult = new LinkResponse(link.getId(), link.getUrl());
+            var actualResult = linkService.removeLink(CHAT.getId(), request);
+
+            verify(chatLinkRepository, times(1)).removeLinkFromChat(CHAT.getId(), link.getId());
+
+            if (!isLinkTracked) {
+                verify(linkRepository, times(1)).deleteLink(link.getUrl());
+            }
+
+            assertThat(actualResult).isEqualTo(expectedResult);
+        }
+    }
+
+    static Stream<Arguments> getArgumentsForRemoveLinkTest() {
+        return Stream.of(
+            Arguments.of(generateLink(1L, DEFAULT_URL), true, false),
+            Arguments.of(generateLink(2L, DEFAULT_URL + 2), true, true),
+            Arguments.of(generateLink(3L, DEFAULT_URL + 3), false, true),
+            Arguments.of(null, false, false)
+        );
+    }
+
+    private static Link generateLink(long id, String url) {
+        return new Link(
+            id,
+            url,
+            GITHUB_REPO,
+            DEFAULT_LAST_UPDATE_AND_CHECK_TIME,
+            DEFAULT_LAST_UPDATE_AND_CHECK_TIME,
+            OffsetDateTime.now()
+        );
     }
 }

@@ -5,6 +5,8 @@ import edu.java.dto.entity.Chat;
 import edu.java.exception.ChatAlreadyRegisteredException;
 import edu.java.exception.ChatNotFoundException;
 import java.time.OffsetDateTime;
+
+import edu.java.service.jdbc.JdbcChatService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

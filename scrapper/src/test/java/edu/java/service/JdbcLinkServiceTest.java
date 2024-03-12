@@ -1,19 +1,26 @@
 package edu.java.service;
 
+import edu.java.client.stackoverflow.StackOverflowClient;
 import edu.java.domain.repository.jdbc.JdbcChatLinkRepository;
 import edu.java.domain.repository.jdbc.JdbcLinkRepository;
+import edu.java.domain.repository.jdbc.JdbcQuestionRepository;
 import edu.java.dto.entity.Chat;
 import edu.java.dto.entity.Link;
+import edu.java.dto.entity.Question;
 import edu.java.dto.request.AddLinkRequest;
 import edu.java.dto.request.RemoveLinkRequest;
 import edu.java.dto.response.LinkResponse;
 import edu.java.dto.response.ListLinksResponse;
+import edu.java.dto.stackoverflow.QuestionResponse;
+import edu.java.dto.stackoverflow.QuestionResponse.ItemResponse;
 import edu.java.exception.LinkAlreadyTrackedException;
 import edu.java.exception.LinkNotFoundException;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import edu.java.service.jdbc.JdbcLinkService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -23,9 +30,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import static edu.java.dto.entity.LinkType.GITHUB_REPO;
+import static edu.java.dto.entity.LinkType.STACKOVERFLOW_QUESTION;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -39,7 +48,13 @@ class JdbcLinkServiceTest {
     private static final Chat CHAT = new Chat(1L, OffsetDateTime.now());
 
     @Mock
+    private StackOverflowClient stackOverflowClient;
+
+    @Mock
     private JdbcLinkRepository linkRepository;
+
+    @Mock
+    private JdbcQuestionRepository questionRepository;
 
     @Mock
     private JdbcChatLinkRepository chatLinkRepository;
@@ -106,18 +121,38 @@ class JdbcLinkServiceTest {
 
     @Test
     void addNullLink() {
-        AddLinkRequest request = new AddLinkRequest(DEFAULT_URL);
+        var savedLink = new Link(
+            1L,
+            "https://stackoverflow.com/questions/25630159/connect-to-stack-overflow-api",
+            STACKOVERFLOW_QUESTION,
+            DEFAULT_LAST_UPDATE_AND_CHECK_TIME,
+            DEFAULT_LAST_UPDATE_AND_CHECK_TIME,
+            OffsetDateTime.now()
+        );
 
-        var savedLink = generateLink(1L, DEFAULT_URL);
+        QuestionResponse questionResponse = new QuestionResponse(
+            List.of(
+                new ItemResponse(
+                    255L,
+                    savedLink.getUrl(),
+                    savedLink.getLastUpdatedAt(),
+                    2
+                )
+            )
+        );
+
+        AddLinkRequest request = new AddLinkRequest(savedLink.getUrl());
 
         when(linkRepository.findLinkByUrl(request.link())).thenReturn(null);
         when(linkRepository.saveLink(any())).thenReturn(savedLink);
+        when(stackOverflowClient.fetchQuestion(anyLong())).thenReturn(questionResponse);
 
         var actualResult = linkService.addLink(CHAT.getId(), request);
         var expectedResult = new LinkResponse(savedLink.getId(), savedLink.getUrl());
 
         assertThat(actualResult).isEqualTo(expectedResult);
         verify(linkRepository, times(1)).saveLink(any());
+        verify(questionRepository, times(1)).saveQuestion(any(Question.class));
     }
 
     @ParameterizedTest

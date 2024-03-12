@@ -1,11 +1,15 @@
 package edu.java.client.github;
 
 import edu.java.dto.entity.Link;
+import edu.java.dto.github.EventResponse;
 import edu.java.dto.github.RepositoryResponse;
-import java.time.OffsetDateTime;
+import edu.java.dto.update.UpdateInfo;
+import java.util.List;
 
 public interface GithubClient {
     RepositoryResponse fetchRepository(String owner, String repository);
 
-    OffsetDateTime checkForUpdate(Link link);
+    List<EventResponse> fetchEvents(String owner, String repository);
+
+    UpdateInfo checkForUpdate(Link link);
 }

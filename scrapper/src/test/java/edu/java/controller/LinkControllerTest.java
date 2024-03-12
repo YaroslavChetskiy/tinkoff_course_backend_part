@@ -7,7 +7,8 @@ import edu.java.dto.response.LinkResponse;
 import edu.java.dto.response.ListLinksResponse;
 import edu.java.exception.LinkAlreadyTrackedException;
 import edu.java.exception.LinkNotFoundException;
-import edu.java.service.JdbcLinkService;
+import edu.java.service.LinkService;
+import edu.java.service.jdbc.JdbcLinkService;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -35,8 +36,8 @@ class LinkControllerTest {
 
     private static final Long CHAT_ID = 1L;
 
-    @MockBean
-    private JdbcLinkService linkService;
+    @MockBean(name = "jdbcLinkService")
+    private LinkService linkService;
 
     @Autowired
     private WebApplicationContext webApplicationContext;

@@ -1,6 +1,8 @@
 package edu.java.client.stackoverflow;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
+import edu.java.dto.entity.Link;
+import edu.java.dto.entity.LinkType;
 import edu.java.dto.stackoverflow.QuestionResponse;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -93,6 +95,30 @@ class StackOverflowWebClientTest {
         var repositoryResponse = client.fetchQuestion(ID);
 
         assertThat(repositoryResponse).isEqualTo(EXPECTED_RESPONSE);
+    }
+
+    @Test
+    @DisplayName("Парсинг ссылки и получение времени последнего обновления")
+    void getCorrectParsingAndLastUpdateTimeInCheckForUpdate() {
+        wireMockServer.stubFor(get(urlEqualTo(URL))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody(RESPONSE_BODY))
+        );
+
+        StackOverflowClient client = new StackOverflowWebClient(wireMockServer.baseUrl());
+        OffsetDateTime actualResult = client.checkForUpdate(new Link(
+                1L,
+                "https://stackoverflow.com/questions/25630159/connect-to-stack-overflow-api",
+                LinkType.STACKOVERFLOW_QUESTION,
+                null,
+                null,
+                null
+            )
+        );
+
+        assertThat(actualResult).isEqualTo(EXPECTED_RESPONSE.items().getFirst().lastUpdateTime());
     }
 
     @AfterAll

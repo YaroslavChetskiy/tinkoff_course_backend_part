@@ -14,8 +14,9 @@ CREATE TABLE IF NOT EXISTS scrapper_schema.chat (
 --changeset chetskiy:create-table-link
 CREATE TABLE IF NOT EXISTS scrapper_schema.link (
     id BIGSERIAL PRIMARY KEY,
-    url VARCHAR(255) NOT NULL,
+    url VARCHAR(255) UNIQUE NOT NULL,
     type VARCHAR(48),
+    checked_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -23,7 +24,8 @@ CREATE TABLE IF NOT EXISTS scrapper_schema.link (
 -- я думаю, что логично будет сделать many-to-many связь
 --changeset chetskiy:create-association-table-chat-link
 CREATE TABLE IF NOT EXISTS scrapper_schema.chat_link (
+    id BIGSERIAL PRIMARY KEY,
     chat_id BIGINT REFERENCES scrapper_schema.chat(id) ON DELETE CASCADE,
     link_id BIGINT REFERENCES scrapper_schema.link(id) ON DELETE CASCADE,
-    PRIMARY KEY (chat_id, link_id)
+    UNIQUE (chat_id, link_id)
 );

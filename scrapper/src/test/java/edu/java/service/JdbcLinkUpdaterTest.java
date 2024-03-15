@@ -5,24 +5,26 @@ import edu.java.client.github.GithubClient;
 import edu.java.client.stackoverflow.StackOverflowClient;
 import edu.java.domain.repository.jdbc.JdbcChatLinkRepository;
 import edu.java.domain.repository.jdbc.JdbcLinkRepository;
+import edu.java.domain.repository.jdbc.JdbcQuestionRepository;
 import edu.java.dto.entity.Link;
-import edu.java.dto.entity.LinkType;
+import edu.java.dto.entity.Question;
 import edu.java.dto.request.LinkUpdateRequest;
+import edu.java.dto.update.UpdateInfo;
+import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.util.Arrays;
+import java.util.List;
+import edu.java.service.jdbc.JdbcLinkUpdater;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.Duration;
-import java.time.OffsetDateTime;
-import java.util.Arrays;
-import java.util.List;
-
 import static edu.java.dto.entity.LinkType.GITHUB_REPO;
 import static edu.java.dto.entity.LinkType.STACKOVERFLOW_QUESTION;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
@@ -34,6 +36,8 @@ class JdbcLinkUpdaterTest {
 
     @Mock
     private JdbcChatLinkRepository chatLinkRepository;
+
+    @Mock JdbcQuestionRepository questionRepository;
 
     @Mock
     private JdbcLinkRepository linkRepository;
@@ -71,9 +75,22 @@ class JdbcLinkUpdaterTest {
             )
         );
 
+        var updateInfo = new UpdateInfo(
+            true,
+            OffsetDateTime.now(),
+            "dummy"
+        );
+
+        var question = new Question(1L, 2, 2L);
+
         when(linkRepository.findOutdatedLinks(any(Duration.class))).thenReturn(outdatedLinks);
-        when(githubClient.checkForUpdate(any(Link.class))).thenReturn(OffsetDateTime.now());
-        when(stackOverflowClient.checkForUpdate(any(Link.class))).thenReturn(OffsetDateTime.now());
+
+        when(githubClient.checkForUpdate(any(Link.class))).thenReturn(updateInfo
+        );
+
+        when(questionRepository.findByLinkId(anyLong())).thenReturn(question);
+
+        when(stackOverflowClient.checkForUpdate(any(Link.class), anyInt())).thenReturn(updateInfo);
 
         int updatedCount = jdbcLinkUpdater.update();
 
@@ -86,5 +103,6 @@ class JdbcLinkUpdaterTest {
             any(OffsetDateTime.class),
             any(OffsetDateTime.class)
         );
+        verify(questionRepository, times(1)).findByLinkId(anyLong());
     }
 }

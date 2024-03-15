@@ -1,9 +1,10 @@
-package edu.java.service;
+package edu.java.service.jdbc;
 
 import edu.java.domain.repository.jdbc.JdbcChatRepository;
 import edu.java.dto.entity.Chat;
 import edu.java.exception.ChatAlreadyRegisteredException;
 import edu.java.exception.ChatNotFoundException;
+import edu.java.service.ChatService;
 import java.time.OffsetDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,17 +1,24 @@
 package edu.java.client.github;
 
 import edu.java.dto.entity.Link;
+import edu.java.dto.github.EventResponse;
 import edu.java.dto.github.RepositoryResponse;
+import edu.java.dto.update.UpdateInfo;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.time.OffsetDateTime;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
 import org.springframework.web.reactive.function.client.WebClient;
+import static edu.java.dto.github.EventType.UNKNOWN;
 
 public class GithubWebClient implements GithubClient {
 
     private static final String DEFAULT_BASE_URL = "https://api.github.com/";
 
     private static final String REPOSITORY_ENDPOINT = "/repos/{owner}/{repo}";
+    private static final String EVENTS_ENDPOINT = "/repos/{owner}/{repo}/events";
 
     private final WebClient webClient;
 
@@ -35,14 +42,55 @@ public class GithubWebClient implements GithubClient {
     }
 
     @Override
-    public OffsetDateTime checkForUpdate(Link link) {
+    public List<EventResponse> fetchEvents(String owner, String repository) {
+        return Arrays.stream(Objects.requireNonNull(webClient.get()
+            .uri(EVENTS_ENDPOINT, owner, repository)
+            .retrieve()
+            .bodyToMono(EventResponse[].class)
+            .block())).toList();
+    }
+
+    @Override
+    public UpdateInfo checkForUpdate(Link link) {
         try {
             URI uri = new URI(link.getUrl());
             String[] pathParts = uri.getPath().split("/");
 
-            RepositoryResponse response = fetchRepository(pathParts[1], pathParts[2]);
+            var owner = pathParts[1];
+            var repository = pathParts[2];
 
-            return response.lastUpdateTime();
+            RepositoryResponse response = fetchRepository(owner, repository);
+
+            if (response.lastPushedTime().isAfter(link.getLastUpdatedAt())) {
+                EventResponse lastEvent = fetchEvents(owner, repository)
+                    .stream()
+                    .max(Comparator.comparing(EventResponse::createdAt))
+                    .orElse(null);
+
+                // к сожалению, я не смог понять, всегда ли pushed_at относится к времени последнего события
+                if (lastEvent != null && lastEvent.createdAt().isAfter(link.getLastUpdatedAt())) {
+                    return new UpdateInfo(
+                        true,
+                        lastEvent.createdAt(),
+                        lastEvent.type().generateUpdateMessage(lastEvent.payload())
+                    );
+                }
+
+                return new UpdateInfo(
+                    true,
+                    response.lastPushedTime(),
+                    UNKNOWN.generateUpdateMessage(null)
+                );
+            }
+
+            var isNewUpdate = response.lastUpdateTime().isAfter(link.getLastUpdatedAt());
+
+            return new UpdateInfo(
+                isNewUpdate,
+                response.lastUpdateTime(),
+                isNewUpdate ? UNKNOWN.generateUpdateMessage(null) : "Обновлений нет"
+            );
+
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException("Link url is invalid (Could not parse to URI)" + link.getUrl(), e);
         }

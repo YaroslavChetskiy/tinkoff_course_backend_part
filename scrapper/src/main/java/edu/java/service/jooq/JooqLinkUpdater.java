@@ -1,12 +1,16 @@
-package edu.java.service;
+package edu.java.service.jooq;
 
 import edu.java.client.bot.BotClient;
 import edu.java.client.github.GithubClient;
 import edu.java.client.stackoverflow.StackOverflowClient;
-import edu.java.domain.repository.jdbc.JdbcChatLinkRepository;
-import edu.java.domain.repository.jdbc.JdbcLinkRepository;
+import edu.java.domain.repository.jooq.JooqChatLinkRepository;
+import edu.java.domain.repository.jooq.JooqLinkRepository;
+import edu.java.domain.repository.jooq.JooqQuestionRepository;
 import edu.java.dto.entity.Link;
+import edu.java.dto.entity.Question;
 import edu.java.dto.request.LinkUpdateRequest;
+import edu.java.dto.update.UpdateInfo;
+import edu.java.service.LinkUpdater;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import lombok.RequiredArgsConstructor;
@@ -15,14 +19,19 @@ import org.springframework.transaction.annotation.Transactional;
 import static edu.java.dto.entity.LinkType.GITHUB_REPO;
 import static edu.java.dto.entity.LinkType.STACKOVERFLOW_QUESTION;
 
+
+// честно не знаю, что может поменяться, кроме как реализации chatRepository,
+// но раз в задании говорят, что нужно делать разные реализации сервисов, меняя
+// реализацию репозиториев, то сделаю
 @Service
 @RequiredArgsConstructor
-public class JdbcLinkUpdater implements LinkUpdater {
+public class JooqLinkUpdater implements LinkUpdater {
 
     private static final Duration THRESHOLD = Duration.ofDays(1L);
 
-    private final JdbcChatLinkRepository chatLinkRepository;
-    private final JdbcLinkRepository linkRepository;
+    private final JooqChatLinkRepository chatLinkRepository;
+    private final JooqLinkRepository linkRepository;
+    private final JooqQuestionRepository questionRepository;
     private final StackOverflowClient stackOverflowClient;
     private final GithubClient githubClient;
     private final BotClient botClient;
@@ -35,25 +44,27 @@ public class JdbcLinkUpdater implements LinkUpdater {
         var outdatedLinks = linkRepository.findOutdatedLinks(THRESHOLD);
 
         for (Link link : outdatedLinks) {
-            OffsetDateTime lastUpdatedAt = link.getLastUpdatedAt();
+            UpdateInfo updateInfo = new UpdateInfo(false, link.getLastUpdatedAt(), "Обновлений нет");
+
             if (link.getType() == GITHUB_REPO) {
-                lastUpdatedAt = githubClient.checkForUpdate(link);
+                updateInfo = githubClient.checkForUpdate(link);
             } else if (link.getType() == STACKOVERFLOW_QUESTION) {
-                lastUpdatedAt = stackOverflowClient.checkForUpdate(link);
+                Question question = questionRepository.findByLinkId(link.getId());
+                updateInfo = stackOverflowClient.checkForUpdate(link, question.getAnswerCount());
             }
 
-            if (lastUpdatedAt.isAfter(link.getLastUpdatedAt())) {
+            if (updateInfo.isNewUpdate()) {
                 botClient.sendUpdate(new LinkUpdateRequest(
                         link.getId(),
                         link.getUrl(),
-                        "По ссылке есть обновление",
+                        updateInfo.message(),
                         chatLinkRepository.findAllChatIdsByLinkId(link.getId())
                     )
                 );
                 updatedCount++;
             }
 
-            linkRepository.updateLastUpdateAndCheckTime(link.getUrl(), lastUpdatedAt, OffsetDateTime.now());
+            linkRepository.updateLastUpdateAndCheckTime(link.getUrl(), updateInfo.updateTime(), OffsetDateTime.now());
         }
 
         return updatedCount;

@@ -29,3 +29,11 @@ CREATE TABLE IF NOT EXISTS scrapper_schema.chat_link (
     link_id BIGINT REFERENCES scrapper_schema.link(id) ON DELETE CASCADE,
     UNIQUE (chat_id, link_id)
 );
+
+--changeset chetskiy:create-table-question
+CREATE TABLE IF NOT EXISTS scrapper_schema.question (
+    id BIGSERIAL PRIMARY KEY,
+    answer_count INT,
+    link_id BIGINT,
+    FOREIGN KEY (link_id) REFERENCES scrapper_schema.link(id) ON DELETE CASCADE
+)

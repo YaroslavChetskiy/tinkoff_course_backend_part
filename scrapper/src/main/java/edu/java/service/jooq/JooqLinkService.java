@@ -1,28 +1,38 @@
-package edu.java.service;
+package edu.java.service.jooq;
 
-import edu.java.domain.repository.jdbc.JdbcChatLinkRepository;
-import edu.java.domain.repository.jdbc.JdbcLinkRepository;
+import edu.java.client.stackoverflow.StackOverflowClient;
+import edu.java.domain.repository.jooq.JooqChatLinkRepository;
+import edu.java.domain.repository.jooq.JooqLinkRepository;
+import edu.java.domain.repository.jooq.JooqQuestionRepository;
 import edu.java.dto.entity.Link;
 import edu.java.dto.entity.LinkType;
+import edu.java.dto.entity.Question;
 import edu.java.dto.request.AddLinkRequest;
 import edu.java.dto.request.RemoveLinkRequest;
 import edu.java.dto.response.LinkResponse;
 import edu.java.dto.response.ListLinksResponse;
 import edu.java.exception.LinkAlreadyTrackedException;
 import edu.java.exception.LinkNotFoundException;
+import edu.java.service.LinkService;
 import java.time.OffsetDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import static edu.java.dto.entity.LinkType.STACKOVERFLOW_QUESTION;
 
+
+// честно не знаю, что может поменяться, кроме как реализации chatRepository,
+// но раз в задании говорят, что нужно делать разные реализации сервисов, меняя
+// реализацию репозиториев, то сделаю
 @Service
 @RequiredArgsConstructor
-public class JdbcLinkService implements LinkService {
+public class JooqLinkService implements LinkService {
 
-    private final JdbcLinkRepository linkRepository;
-
-    private final JdbcChatLinkRepository chatLinkRepository;
+    private final JooqLinkRepository linkRepository;
+    private final JooqChatLinkRepository chatLinkRepository;
+    private final JooqQuestionRepository questionRepository;
+    private final StackOverflowClient stackOverflowWebClient;
 
     @Transactional(readOnly = true)
     public ListLinksResponse getAllLinks(Long chatId) {
@@ -53,6 +63,14 @@ public class JdbcLinkService implements LinkService {
                     OffsetDateTime.now()
                 )
             );
+
+            if (savedLink.getType() == STACKOVERFLOW_QUESTION) {
+                var question = stackOverflowWebClient
+                    .fetchQuestion(stackOverflowWebClient.getQuestionId(savedLink.getUrl()))
+                    .items()
+                    .getFirst();
+                questionRepository.saveQuestion(new Question(null, question.answerCount(), savedLink.getId()));
+            }
         }
 
         chatLinkRepository.addLinkToChat(chatId, savedLink.getId());

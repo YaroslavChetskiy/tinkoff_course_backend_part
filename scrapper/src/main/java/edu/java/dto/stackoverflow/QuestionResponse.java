@@ -8,7 +8,8 @@ public record QuestionResponse(List<ItemResponse> items) {
     public record ItemResponse(
         @JsonProperty("question_id") Long id,
         @JsonProperty("link") String url,
-        @JsonProperty("last_activity_date") OffsetDateTime lastUpdateTime) {
+        @JsonProperty("last_activity_date") OffsetDateTime lastUpdateTime,
+        @JsonProperty("answer_count") Integer answerCount) {
     }
 }
 

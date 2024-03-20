@@ -3,13 +3,14 @@ package edu.java.bot.command;
 import com.pengrad.telegrambot.model.Chat;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.Update;
+import edu.java.bot.client.scrapper.ScrapperClient;
 import edu.java.bot.messageProcessor.SimpleMessageProcessor;
-import edu.java.bot.model.entity.Link;
+import edu.java.bot.model.dto.request.AddLinkRequest;
+import edu.java.bot.model.dto.request.RemoveLinkRequest;
+import edu.java.bot.model.dto.response.LinkResponse;
+import edu.java.bot.model.dto.response.ListLinksResponse;
 import edu.java.bot.model.entity.UserChat;
-import edu.java.bot.storage.ChatDao;
-import edu.java.bot.util.LinkUtil;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -18,17 +19,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CommandTest {
-
-    private static final ChatDao STORAGE = new ChatDao();
-
-    private static final SimpleMessageProcessor PROCESSOR = new SimpleMessageProcessor(STORAGE);
 
     private static final String LIST_OF_COMMANDS = """
         Список команд:
@@ -42,25 +43,34 @@ class CommandTest {
     private static final String LIST_OF_LINKS = """
         Список отслеживаемых ссылок:
          - https://github.com/sanyarnd/tinkoff-java-course-2023/
-         - https://stackoverflow.com/
+         - https://stackoverflow.com/questions/123
         """;
 
     private static final String START_MESSAGE = "Бот запущен! Он поможет вам с отслеживанием ссылок.";
 
+    private static final String REPEATED_REGISTRATION_MESSAGE = "Бот уже запущен.";
+
     private static final String SUCCESS_TRACKING = "Отслеживание ссылки начато успешно.";
+
+    private static final String ALREADY_TACKED = "Вы уже отслеживаете данную ссылку.";
 
     protected static final String UNSUPPORTED_LINK = """
         Неверный формат ссылки или ресурс.
-        Пример ссылки: https://example.com/catalog/file?param1=value1&param2=value2..&param_n=value_n#anchor1
-        Доступные для отслеживания ресурсы: Github, StackOverflow""";
+        Доступные для отслеживания ресурсы: Github, StackOverflow
+
+        Формат ссылок:
+        Github: https://www.github.com/{owner}/{repository}
+        StackOverflow: https://www.stackoverflow.com/questions/{question_id}/{question_title}*
+
+        * - опционально""";
 
     protected static final String NOT_FOUND_LINK = "Укажите ссылку.";
 
-    private static final String UNTRACKED_LINK = "Вы не отслеживаете данную ссылку.";
+    private static final String UNTRACKED_LINK = "Вы и так не отслеживаете данную ссылку.";
 
     private static final String SUCCESS_UNTRACKING = "Отслеживание ссылки прекращено.";
 
-    private static final String TEST_LINK = "https://stackoverflow.com/search";
+    private static final String TEST_LINK = "https://stackoverflow.com/questions/123";
 
     private static final String EMPTY_LINK_LIST = "Вы не отслеживаете ни одной ссылки.";
 
@@ -72,9 +82,14 @@ class CommandTest {
     private static final Message MESSAGE = mock(Message.class);
     private static final Update UPDATE = mock(Update.class);
 
+    @Mock
+    private static ScrapperClient scrapperClient;
+
+    @InjectMocks
+    private static SimpleMessageProcessor processor;
+
     @BeforeAll
     static void prepare() {
-        STORAGE.addChat(USER_USER_CHAT);
         when(CHAT.id()).thenReturn(USER_USER_CHAT.getId());
         when(MESSAGE.chat()).thenReturn(CHAT);
         when(UPDATE.message()).thenReturn(MESSAGE);
@@ -92,111 +107,152 @@ class CommandTest {
 
     static Stream<Arguments> getArgumentsForSupportCapabilityTest() {
         return Stream.of(
-            Arguments.of(new HelpCommand(PROCESSOR, STORAGE), "/help", true),
-            Arguments.of(new HelpCommand(PROCESSOR, STORAGE), "dummy", false),
-            Arguments.of(new ListCommand(PROCESSOR, STORAGE), "/list", true),
-            Arguments.of(new ListCommand(PROCESSOR, STORAGE), "dummy", false),
-            Arguments.of(new StartCommand(PROCESSOR, STORAGE), "/start", true),
-            Arguments.of(new StartCommand(PROCESSOR, STORAGE), "dummy", false),
-            Arguments.of(new TrackCommand(PROCESSOR, STORAGE), "/track", true),
-            Arguments.of(new TrackCommand(PROCESSOR, STORAGE), "/track github.com", true),
-            Arguments.of(new TrackCommand(PROCESSOR, STORAGE), "dummy", false),
-            Arguments.of(new UntrackCommand(PROCESSOR, STORAGE), "/untrack", true),
-            Arguments.of(new UntrackCommand(PROCESSOR, STORAGE), "/untrack github.com", true),
-            Arguments.of(new UntrackCommand(PROCESSOR, STORAGE), "dummy", false)
+            Arguments.of(new HelpCommand(processor, scrapperClient), "/help", true),
+            Arguments.of(new HelpCommand(processor, scrapperClient), "dummy", false),
+            Arguments.of(new ListCommand(processor, scrapperClient), "/list", true),
+            Arguments.of(new ListCommand(processor, scrapperClient), "dummy", false),
+            Arguments.of(new StartCommand(processor, scrapperClient), "/start", true),
+            Arguments.of(new StartCommand(processor, scrapperClient), "dummy", false),
+            Arguments.of(new TrackCommand(processor, scrapperClient), "/track", true),
+            Arguments.of(new TrackCommand(processor, scrapperClient), "/track github.com", true),
+            Arguments.of(new TrackCommand(processor, scrapperClient), "dummy", false),
+            Arguments.of(new UntrackCommand(processor, scrapperClient), "/untrack", true),
+            Arguments.of(new UntrackCommand(processor, scrapperClient), "/untrack github.com", true),
+            Arguments.of(new UntrackCommand(processor, scrapperClient), "dummy", false)
+        );
+    }
+
+    @ParameterizedTest
+    @DisplayName("Получение списка отслеживаемых ресурсов")
+    @MethodSource("getArgumentsForGetListOfLinksInListCommandHandle")
+    void getListOfLinksInListCommandHandle(ListLinksResponse response, String expectedText) {
+        Command command = new ListCommand(processor, scrapperClient);
+
+        when(scrapperClient.getAllLinks(anyLong())).thenReturn(response);
+
+        checkParamsInSendMessage(command, expectedText);
+    }
+
+    static Stream<Arguments> getArgumentsForGetListOfLinksInListCommandHandle() {
+        return Stream.of(
+            Arguments.of(
+                new ListLinksResponse(
+                    List.of(
+                        new LinkResponse(1L, "https://github.com/sanyarnd/tinkoff-java-course-2023/"),
+                        new LinkResponse(2L, TEST_LINK)
+                    ),
+                    2
+                ),
+                LIST_OF_LINKS
+            ),
+            Arguments.of(new ListLinksResponse(null, 0), EMPTY_LINK_LIST)
         );
     }
 
     @Test
-    @DisplayName("Получение списка отслеживаемых ресурсов")
-    void getListOfLinksInListCommandHandle() throws URISyntaxException {
-
-        Command command = new ListCommand(PROCESSOR, STORAGE);
-        checkParamsInSendMessage(command, EMPTY_LINK_LIST);
-
-        Link link1 = LinkUtil.parse(new URI("https://github.com/sanyarnd/tinkoff-java-course-2023/"));
-        Link link2 = LinkUtil.parse(new URI("https://stackoverflow.com/"));
-        USER_USER_CHAT.getLinks().add(link1);
-        USER_USER_CHAT.getLinks().add(link2);
-
-        checkParamsInSendMessage(command, LIST_OF_LINKS);
-
-        USER_USER_CHAT.getLinks().remove(link1);
-        USER_USER_CHAT.getLinks().remove(link2);
+    @DisplayName("Получение правильной справки о командах")
+    void getCorrectSendMessageInHelpCommandHandle() {
+        var helpCommand = new HelpCommand(processor, scrapperClient);
+        checkParamsInSendMessage(helpCommand, LIST_OF_COMMANDS);
     }
 
     @ParameterizedTest
-    @DisplayName("Получение нужного сообщения при обработке команды (в которых не используются ссылки)")
-    @MethodSource("getArgumentsForGetCorrectSendMessageTest")
-    void getCorrectSendMessageInCommandHandleThatNoRelatedToLinks(Command command, String text) {
-        checkParamsInSendMessage(command, text);
+    @DisplayName("Обработка команды /start")
+    @MethodSource("getArgumentsForGetCorrectMessageInStartCommandHandle")
+    void getCorrectMessageInStartCommandHandle(String response, String expectedText) {
+        var startCommand = new StartCommand(processor, scrapperClient);
+
+        when(scrapperClient.registerChat(anyLong())).thenReturn(response);
+
+        checkParamsInSendMessage(startCommand, expectedText);
     }
 
-    static Stream<Arguments> getArgumentsForGetCorrectSendMessageTest() {
+    static Stream<Arguments> getArgumentsForGetCorrectMessageInStartCommandHandle() {
         return Stream.of(
-            Arguments.of(new HelpCommand(PROCESSOR, STORAGE), LIST_OF_COMMANDS),
-            Arguments.of(new StartCommand(PROCESSOR, STORAGE), START_MESSAGE)
+            Arguments.of("Чат успешно зарегистрирован", START_MESSAGE),
+            Arguments.of(null, REPEATED_REGISTRATION_MESSAGE)
         );
     }
 
     @ParameterizedTest()
     @MethodSource("getArgumentsForGetCorrectMessageInTrackCommandHandleTest")
-    void getCorrectMessageInTrackCommandHandle(String command, String expectedText) throws URISyntaxException {
+    void getCorrectMessageInTrackCommandHandleIfCommandIsIncorrect(String command, String expectedText) {
         when(MESSAGE.text()).thenReturn(command);
-        checkParamsInSendMessage(new TrackCommand(PROCESSOR, STORAGE), expectedText);
-        var split = command.split("\\s+", 2);
-        if (expectedText.equals(SUCCESS_TRACKING)) {
-            var link = LinkUtil.parse(new URI(split[1]));
-            assertThat(USER_USER_CHAT.getLinks()).contains(link);
-            USER_USER_CHAT.getLinks().clear();
-        }
+
+        var trackCommand = new TrackCommand(processor, scrapperClient);
+
+        checkParamsInSendMessage(trackCommand, expectedText);
     }
 
     static Stream<Arguments> getArgumentsForGetCorrectMessageInTrackCommandHandleTest() {
         return Stream.of(
             Arguments.of("/track", NOT_FOUND_LINK),
             Arguments.of("/track dummy.com", UNSUPPORTED_LINK),
-            Arguments.of("/track what123", UNSUPPORTED_LINK),
-            Arguments.of("/track " + TEST_LINK, SUCCESS_TRACKING)
+            Arguments.of("/track what123", UNSUPPORTED_LINK)
         );
     }
 
-    @Test
-    void addingNewUserIfNotExistInTrackHandle() throws URISyntaxException {
-        var id = 2L;
-        UserChat userChat = UserChat.builder()
-            .id(id)
-            .build();
-        String command = "/track " + TEST_LINK;
-        userChat.getLinks().add(LinkUtil.parse(new URI(TEST_LINK)));
-        when(CHAT.id()).thenReturn(id);
+    @ParameterizedTest
+    @DisplayName("Получение корректного сообщения при верной команде от пользователя")
+    @MethodSource("getArgumentsForGetCorrectMessageInTrackCommandHandleIfCommandIsCorrect")
+    void getCorrectMessageInTrackCommandHandleIfCommandIsCorrect(
+        String command,
+        LinkResponse linkResponse,
+        String expectedText
+    ) {
+        var trackCommand = new TrackCommand(processor, scrapperClient);
+
         when(MESSAGE.text()).thenReturn(command);
+        when(scrapperClient.addLink(anyLong(), any(AddLinkRequest.class))).thenReturn(linkResponse);
 
-        var trackCommand = new TrackCommand(PROCESSOR, STORAGE);
-        trackCommand.handle(UPDATE);
+        checkParamsInSendMessage(trackCommand, expectedText);
+    }
 
-        assertThat(STORAGE.getStorage()).contains(userChat);
+    static Stream<Arguments> getArgumentsForGetCorrectMessageInTrackCommandHandleIfCommandIsCorrect() {
+        return Stream.of(
+            Arguments.of("/track " + TEST_LINK, new LinkResponse(1L, TEST_LINK), SUCCESS_TRACKING),
+            Arguments.of("/track " + TEST_LINK, new LinkResponse(null, null), ALREADY_TACKED)
+        );
     }
 
     @ParameterizedTest()
-    @MethodSource("getArgumentsForGetCorrectMessageInUntrackCommandHandleTest")
-    void getCorrectMessageInUntrackCommandHandle(String command, String expectedText) throws URISyntaxException {
-        var link = LinkUtil.parse(new URI(TEST_LINK));
-        USER_USER_CHAT.getLinks().add(link);
+    @MethodSource("getArgumentsForGetCorrectMessageInUntrackCommandHandleIfCommandIsValidTest")
+    void getCorrectMessageInUntrackCommandHandleIfCommandIsValid(
+        String command,
+        LinkResponse linkResponse,
+        String expectedText
+    ) {
+        var untrackCommand = new UntrackCommand(processor, scrapperClient);
+
+        when(scrapperClient.removeLink(anyLong(), any(RemoveLinkRequest.class))).thenReturn(linkResponse);
+
         when(MESSAGE.text()).thenReturn(command);
-        checkParamsInSendMessage(new UntrackCommand(PROCESSOR, STORAGE), expectedText);
-        if (expectedText.equals(SUCCESS_UNTRACKING)) {
-            assertThat(USER_USER_CHAT.getLinks()).doesNotContain(link);
-        }
-        USER_USER_CHAT.getLinks().clear();
+
+        checkParamsInSendMessage(untrackCommand, expectedText);
     }
 
-    static Stream<Arguments> getArgumentsForGetCorrectMessageInUntrackCommandHandleTest() {
+    static Stream<Arguments> getArgumentsForGetCorrectMessageInUntrackCommandHandleIfCommandIsValidTest() {
+        return Stream.of(
+            Arguments.of("/untrack dummy.com", new LinkResponse(null, null), UNTRACKED_LINK),
+            Arguments.of("/untrack " + TEST_LINK, new LinkResponse(1L, TEST_LINK), SUCCESS_UNTRACKING),
+            Arguments.of("/untrack " + TEST_LINK, new LinkResponse(null, null), UNTRACKED_LINK)
+        );
+    }
+
+    @ParameterizedTest()
+    @MethodSource("getArgumentsForGetCorrectMessageInUntrackCommandHandleIfCommandIsInvalidTest")
+    void getCorrectMessageInUntrackCommandHandleIfCommandIsInvalid(String command, String expectedText) {
+        var untrackCommand = new UntrackCommand(processor, scrapperClient);
+
+        when(MESSAGE.text()).thenReturn(command);
+
+        checkParamsInSendMessage(untrackCommand, expectedText);
+    }
+
+    static Stream<Arguments> getArgumentsForGetCorrectMessageInUntrackCommandHandleIfCommandIsInvalidTest() {
         return Stream.of(
             Arguments.of("/untrack", NOT_FOUND_LINK),
-            Arguments.of("/untrack dummy.com", UNTRACKED_LINK),
-            Arguments.of("/untrack what123", UNTRACKED_LINK),
-            Arguments.of("/untrack " + TEST_LINK, SUCCESS_UNTRACKING)
+            Arguments.of("/untrack `", UNSUPPORTED_LINK)
         );
     }
 

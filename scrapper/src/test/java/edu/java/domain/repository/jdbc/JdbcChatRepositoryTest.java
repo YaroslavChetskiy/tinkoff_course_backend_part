@@ -1,9 +1,7 @@
 package edu.java.domain.repository.jdbc;
 
-import edu.java.dto.entity.Chat;
-import edu.java.dto.entity.ChatLink;
+import edu.java.dto.entity.jdbc.Chat;
 import edu.java.scrapper.IntegrationTest;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -11,12 +9,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 class JdbcChatRepositoryTest extends IntegrationTest {

@@ -1,8 +1,6 @@
 package edu.java.client.github;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
-import edu.java.dto.entity.Link;
-import edu.java.dto.entity.LinkType;
 import edu.java.dto.github.EventResponse;
 import edu.java.dto.github.EventResponse.Payload;
 import edu.java.dto.github.EventResponse.Payload.Comment;
@@ -134,14 +132,9 @@ class GithubWebClientTest {
         );
 
         GithubClient client = new GithubWebClient(wireMockServer.baseUrl());
-        UpdateInfo actualResult = client.checkForUpdate(new Link(
-                1L,
-                "https://github.com/YaroslavChetskiy/tinkoff_course_backend_part",
-                LinkType.GITHUB_REPO,
-                REPO_EXPECTED_RESPONSE.lastPushedTime().minusDays(2),
-                REPO_EXPECTED_RESPONSE.lastPushedTime().minusDays(2),
-                null
-            )
+        UpdateInfo actualResult = client.checkForUpdate(
+            "https://github.com/YaroslavChetskiy/tinkoff_course_backend_part",
+            REPO_EXPECTED_RESPONSE.lastPushedTime().minusDays(2)
         );
 
         var expectedEvent = EVENTS_EXPECTED_RESPONSE.getFirst();

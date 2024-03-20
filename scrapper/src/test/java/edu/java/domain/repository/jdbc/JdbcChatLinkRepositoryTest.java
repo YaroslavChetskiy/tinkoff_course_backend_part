@@ -1,9 +1,9 @@
 package edu.java.domain.repository.jdbc;
 
-import edu.java.dto.entity.Chat;
-import edu.java.dto.entity.ChatLink;
-import edu.java.dto.entity.Link;
-import edu.java.dto.entity.LinkType;
+import edu.java.dto.entity.jdbc.Chat;
+import edu.java.dto.entity.jdbc.ChatLink;
+import edu.java.dto.entity.jdbc.Link;
+import edu.java.dto.entity.jdbc.LinkType;
 import edu.java.scrapper.IntegrationTest;
 import java.util.List;
 import org.junit.jupiter.api.Test;

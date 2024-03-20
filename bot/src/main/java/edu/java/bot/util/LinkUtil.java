@@ -9,8 +9,8 @@ import lombok.experimental.UtilityClass;
 public class LinkUtil {
 
     private static final List<String> SUPPORTED_HOSTNAMES_REGEXES = List.of(
-        "(www\\.)?github\\.com",
-        "(www\\.)?stackoverflow\\.com"
+        "(https?://)?(www\\.)?github\\.com/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_-]+)/?",
+        "(https?://)?(www\\.)?stackoverflow\\.com/questions/(\\d+)(/[^/]*)?"
     );
 
     public static Link parse(URI url) {
@@ -28,7 +28,7 @@ public class LinkUtil {
                && url.getHost() != null
                && url.getPath() != null
                && SUPPORTED_HOSTNAMES_REGEXES.stream()
-                   .anyMatch(regex -> url.getHost().matches(regex));
+                   .anyMatch(regex -> url.toString().matches(regex));
     }
 
 }

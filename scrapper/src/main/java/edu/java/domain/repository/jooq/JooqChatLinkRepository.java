@@ -1,7 +1,7 @@
 package edu.java.domain.repository.jooq;
 
 import edu.java.domain.repository.ChatLinkRepository;
-import edu.java.dto.entity.Link;
+import edu.java.dto.entity.jdbc.Link;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;

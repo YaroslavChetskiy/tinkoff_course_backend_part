@@ -1,7 +1,7 @@
 package edu.java.domain.repository.jdbc;
 
-import edu.java.dto.entity.Link;
-import edu.java.dto.entity.LinkType;
+import edu.java.dto.entity.jdbc.Link;
+import edu.java.dto.entity.jdbc.LinkType;
 import edu.java.scrapper.IntegrationTest;
 import edu.java.util.RepositoryUtil;
 import java.time.Duration;

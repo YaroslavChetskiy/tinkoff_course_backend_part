@@ -36,7 +36,7 @@ class LinkControllerTest {
 
     private static final Long CHAT_ID = 1L;
 
-    @MockBean(name = "jdbcLinkService")
+    @MockBean
     private LinkService linkService;
 
     @Autowired

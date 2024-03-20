@@ -28,7 +28,7 @@ class ChatControllerTest {
 
     private static final Long CHAT_ID = 1L;
 
-    @MockBean(name = "jdbcChatService")
+    @MockBean
     private ChatService chatService;
 
     @Autowired

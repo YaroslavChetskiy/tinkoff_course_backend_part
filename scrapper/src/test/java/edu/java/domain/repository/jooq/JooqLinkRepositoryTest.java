@@ -1,8 +1,8 @@
 package edu.java.domain.repository.jooq;
 
 import edu.java.domain.jooq.scrapper_schema.Tables;
-import edu.java.dto.entity.Link;
-import edu.java.dto.entity.LinkType;
+import edu.java.dto.entity.jdbc.Link;
+import edu.java.dto.entity.jdbc.LinkType;
 import edu.java.scrapper.IntegrationTest;
 import java.time.Duration;
 import java.time.LocalDate;

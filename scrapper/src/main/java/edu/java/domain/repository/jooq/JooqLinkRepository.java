@@ -1,7 +1,7 @@
 package edu.java.domain.repository.jooq;
 
 import edu.java.domain.repository.LinkRepository;
-import edu.java.dto.entity.Link;
+import edu.java.dto.entity.jdbc.Link;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;

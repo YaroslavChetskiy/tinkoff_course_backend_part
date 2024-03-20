@@ -2,16 +2,16 @@ package edu.java.bot.command;
 
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
+import edu.java.bot.client.scrapper.ScrapperClient;
 import edu.java.bot.messageProcessor.UserMessageProcessor;
-import edu.java.bot.storage.ChatDao;
 
 public class HelpCommand extends BaseCommand {
 
     private static final String COMMAND = "/help";
     private static final String DESCRIPTION = "Показать список доступных команд.";
 
-    public HelpCommand(UserMessageProcessor processor, ChatDao storage) {
-        super(processor, storage);
+    public HelpCommand(UserMessageProcessor processor, ScrapperClient scrapperClient) {
+        super(processor, scrapperClient);
     }
 
     @Override

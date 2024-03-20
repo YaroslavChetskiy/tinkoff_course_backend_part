@@ -1,6 +1,6 @@
 package edu.java.domain.repository.jooq;
 
-import edu.java.dto.entity.Chat;
+import edu.java.dto.entity.jdbc.Chat;
 import edu.java.scrapper.IntegrationTest;
 import java.util.List;
 import org.jooq.DSLContext;

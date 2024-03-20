@@ -1,8 +1,8 @@
 package edu.java.domain.repository.jooq;
 
-import edu.java.dto.entity.Link;
-import edu.java.dto.entity.LinkType;
-import edu.java.dto.entity.Question;
+import edu.java.dto.entity.jdbc.Link;
+import edu.java.dto.entity.jdbc.LinkType;
+import edu.java.dto.entity.jdbc.Question;
 import edu.java.scrapper.IntegrationTest;
 import java.util.List;
 import org.jooq.DSLContext;
@@ -68,6 +68,25 @@ class JooqQuestionRepositoryTest extends IntegrationTest {
         Question actualResult = questionRepository.findByLinkId(savedLink.getId());
 
         assertThat(actualResult).isEqualTo(savedQuestion);
+    }
+
+    @Test
+    @Transactional
+    @Rollback
+    void updateAnswerCountByLinkId() {
+        Link link = new Link(
+            2L, "stackoverflow.com/questions/123", LinkType.GITHUB_REPO,
+            null, null, null
+        );
+
+        Link savedLink = linkRepository.saveLink(link);
+        Question question = new Question(null, 1, savedLink.getId());
+        questionRepository.saveQuestion(question);
+
+        questionRepository.updateAnswerCountByLinkId(savedLink.getId(), 2);
+
+        var updatedQuestion = questionRepository.findByLinkId(savedLink.getId());
+        assertThat(updatedQuestion.getAnswerCount()).isEqualTo(2);
     }
 
     private List<Question> getQuestion() {

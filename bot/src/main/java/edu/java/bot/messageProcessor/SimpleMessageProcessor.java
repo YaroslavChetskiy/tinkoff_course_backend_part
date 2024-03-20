@@ -2,13 +2,13 @@ package edu.java.bot.messageProcessor;
 
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
+import edu.java.bot.client.scrapper.ScrapperClient;
 import edu.java.bot.command.Command;
 import edu.java.bot.command.HelpCommand;
 import edu.java.bot.command.ListCommand;
 import edu.java.bot.command.StartCommand;
 import edu.java.bot.command.TrackCommand;
 import edu.java.bot.command.UntrackCommand;
-import edu.java.bot.storage.ChatDao;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -23,13 +23,13 @@ public class SimpleMessageProcessor implements UserMessageProcessor {
 
     private final List<Command> commands = new ArrayList<>();
 
-    public SimpleMessageProcessor(ChatDao storage) {
+    public SimpleMessageProcessor(ScrapperClient scrapperClient) {
         commands.addAll(List.of(
-            new StartCommand(this, storage),
-            new HelpCommand(this, storage),
-            new TrackCommand(this, storage),
-            new UntrackCommand(this, storage),
-            new ListCommand(this, storage)
+            new StartCommand(this, scrapperClient),
+            new HelpCommand(this, scrapperClient),
+            new TrackCommand(this, scrapperClient),
+            new UntrackCommand(this, scrapperClient),
+            new ListCommand(this, scrapperClient)
         ));
     }
 

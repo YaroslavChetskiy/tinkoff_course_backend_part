@@ -7,7 +7,6 @@ import edu.java.exception.ChatNotFoundException;
 import edu.java.service.ChatService;
 import java.time.OffsetDateTime;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor

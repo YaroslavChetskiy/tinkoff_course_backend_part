@@ -1,23 +1,28 @@
 package edu.java.bot.command;
 
+import edu.java.bot.client.scrapper.ScrapperClient;
 import edu.java.bot.messageProcessor.UserMessageProcessor;
-import edu.java.bot.storage.ChatDao;
 
 public abstract class BaseCommand implements Command {
 
     protected static final String UNSUPPORTED_LINK = """
         Неверный формат ссылки или ресурс.
-        Пример ссылки: https://example.com/catalog/file?param1=value1&param2=value2..&param_n=value_n#anchor1
-        Доступные для отслеживания ресурсы: Github, StackOverflow""";
+        Доступные для отслеживания ресурсы: Github, StackOverflow
+
+        Формат ссылок:
+        Github: https://www.github.com/{owner}/{repository}
+        StackOverflow: https://www.stackoverflow.com/questions/{question_id}/{question_title}*
+
+        * - опционально""";
 
     protected static final String NOT_FOUND_LINK = "Укажите ссылку.";
 
     protected final UserMessageProcessor processor;
-    protected final ChatDao storage;
+    protected final ScrapperClient scrapperClient;
 
-    public BaseCommand(UserMessageProcessor processor, ChatDao storage) {
+    public BaseCommand(UserMessageProcessor processor, ScrapperClient scrapperClient) {
         this.processor = processor;
-        this.storage = storage;
+        this.scrapperClient = scrapperClient;
     }
 
     @Override

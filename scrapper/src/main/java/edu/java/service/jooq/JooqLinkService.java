@@ -4,9 +4,9 @@ import edu.java.client.stackoverflow.StackOverflowClient;
 import edu.java.domain.repository.jooq.JooqChatLinkRepository;
 import edu.java.domain.repository.jooq.JooqLinkRepository;
 import edu.java.domain.repository.jooq.JooqQuestionRepository;
-import edu.java.dto.entity.Link;
-import edu.java.dto.entity.LinkType;
-import edu.java.dto.entity.Question;
+import edu.java.dto.entity.jdbc.Link;
+import edu.java.dto.entity.jdbc.LinkType;
+import edu.java.dto.entity.jdbc.Question;
 import edu.java.dto.request.AddLinkRequest;
 import edu.java.dto.request.RemoveLinkRequest;
 import edu.java.dto.response.LinkResponse;
@@ -17,15 +17,12 @@ import edu.java.service.LinkService;
 import java.time.OffsetDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import static edu.java.dto.entity.LinkType.STACKOVERFLOW_QUESTION;
-
+import static edu.java.dto.entity.jdbc.LinkType.STACKOVERFLOW_QUESTION;
 
 // честно не знаю, что может поменяться, кроме как реализации chatRepository,
 // но раз в задании говорят, что нужно делать разные реализации сервисов, меняя
 // реализацию репозиториев, то сделаю
-@Service
 @RequiredArgsConstructor
 public class JooqLinkService implements LinkService {
 

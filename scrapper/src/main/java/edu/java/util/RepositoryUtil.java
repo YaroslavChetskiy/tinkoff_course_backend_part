@@ -1,7 +1,7 @@
 package edu.java.util;
 
-import edu.java.dto.entity.Link;
-import edu.java.dto.entity.LinkType;
+import edu.java.dto.entity.jdbc.Link;
+import edu.java.dto.entity.jdbc.LinkType;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;

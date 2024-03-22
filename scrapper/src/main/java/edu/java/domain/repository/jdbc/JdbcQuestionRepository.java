@@ -1,13 +1,14 @@
 package edu.java.domain.repository.jdbc;
 
 import edu.java.domain.repository.QuestionRepository;
-import edu.java.dto.entity.Question;
+import edu.java.dto.entity.jdbc.Question;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import static edu.java.domain.repository.sqlRequest.QuestionSqlRequest.FIND_BY_LINK_ID_SQL;
 import static edu.java.domain.repository.sqlRequest.QuestionSqlRequest.SAVE_QUESTION_SQL;
+import static edu.java.domain.repository.sqlRequest.QuestionSqlRequest.UPDATE_ANSWER_COUNT_BY_LINK_ID_SQL;
 
 @Repository
 @RequiredArgsConstructor
@@ -36,5 +37,11 @@ public class JdbcQuestionRepository implements QuestionRepository {
         } catch (EmptyResultDataAccessException exception) {
             return null;
         }
+    }
+
+    @Override
+    public void updateAnswerCountByLinkId(Long linkId, Integer answerCount) {
+        jdbcTemplate.update(UPDATE_ANSWER_COUNT_BY_LINK_ID_SQL, answerCount, linkId);
+
     }
 }

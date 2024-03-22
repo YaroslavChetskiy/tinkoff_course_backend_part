@@ -1,11 +1,11 @@
 package edu.java.client.github;
 
-import edu.java.dto.entity.Link;
 import edu.java.dto.github.EventResponse;
 import edu.java.dto.github.RepositoryResponse;
 import edu.java.dto.update.UpdateInfo;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -51,9 +51,9 @@ public class GithubWebClient implements GithubClient {
     }
 
     @Override
-    public UpdateInfo checkForUpdate(Link link) {
+    public UpdateInfo checkForUpdate(String url, OffsetDateTime lastUpdatedAt) {
         try {
-            URI uri = new URI(link.getUrl());
+            URI uri = new URI(url);
             String[] pathParts = uri.getPath().split("/");
 
             var owner = pathParts[1];
@@ -61,14 +61,14 @@ public class GithubWebClient implements GithubClient {
 
             RepositoryResponse response = fetchRepository(owner, repository);
 
-            if (response.lastPushedTime().isAfter(link.getLastUpdatedAt())) {
+            if (response.lastPushedTime().isAfter(lastUpdatedAt)) {
                 EventResponse lastEvent = fetchEvents(owner, repository)
                     .stream()
                     .max(Comparator.comparing(EventResponse::createdAt))
                     .orElse(null);
 
                 // к сожалению, я не смог понять, всегда ли pushed_at относится к времени последнего события
-                if (lastEvent != null && lastEvent.createdAt().isAfter(link.getLastUpdatedAt())) {
+                if (lastEvent != null && lastEvent.createdAt().isAfter(lastUpdatedAt)) {
                     return new UpdateInfo(
                         true,
                         lastEvent.createdAt(),
@@ -83,7 +83,7 @@ public class GithubWebClient implements GithubClient {
                 );
             }
 
-            var isNewUpdate = response.lastUpdateTime().isAfter(link.getLastUpdatedAt());
+            var isNewUpdate = response.lastUpdateTime().isAfter(lastUpdatedAt);
 
             return new UpdateInfo(
                 isNewUpdate,
@@ -92,7 +92,7 @@ public class GithubWebClient implements GithubClient {
             );
 
         } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Link url is invalid (Could not parse to URI)" + link.getUrl(), e);
+            throw new IllegalArgumentException("Link url is invalid (Could not parse to URI)" + url, e);
         }
     }
 }

@@ -1,7 +1,7 @@
 package edu.java.domain.repository.jooq;
 
 import edu.java.domain.repository.QuestionRepository;
-import edu.java.dto.entity.Question;
+import edu.java.dto.entity.jdbc.Question;
 import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
 import org.springframework.stereotype.Repository;
@@ -28,5 +28,13 @@ public class JooqQuestionRepository implements QuestionRepository {
             .from(QUESTION)
             .where(QUESTION.LINK_ID.eq(linkId))
             .fetchOneInto(Question.class);
+    }
+
+    @Override
+    public void updateAnswerCountByLinkId(Long linkId, Integer answerCount) {
+        dslContext.update(QUESTION)
+            .set(QUESTION.ANSWER_COUNT, answerCount)
+            .where(QUESTION.LINK_ID.eq(linkId))
+            .execute();
     }
 }

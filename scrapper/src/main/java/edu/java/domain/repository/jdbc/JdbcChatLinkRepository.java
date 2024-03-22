@@ -1,7 +1,7 @@
 package edu.java.domain.repository.jdbc;
 
 import edu.java.domain.repository.ChatLinkRepository;
-import edu.java.dto.entity.Link;
+import edu.java.dto.entity.jdbc.Link;
 import edu.java.util.RepositoryUtil;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

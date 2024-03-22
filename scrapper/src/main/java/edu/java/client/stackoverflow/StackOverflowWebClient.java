@@ -1,10 +1,11 @@
 package edu.java.client.stackoverflow;
 
-import edu.java.dto.entity.Link;
 import edu.java.dto.stackoverflow.QuestionResponse;
+import edu.java.dto.stackoverflow.QuestionResponse.ItemResponse;
 import edu.java.dto.update.UpdateInfo;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.OffsetDateTime;
 import org.springframework.web.reactive.function.client.WebClient;
 
 public class StackOverflowWebClient implements StackOverflowClient {
@@ -12,6 +13,7 @@ public class StackOverflowWebClient implements StackOverflowClient {
     private static final String DEFAULT_BASE_URL = "https://api.stackexchange.com/2.3/";
 
     private static final String QUESTION_ENDPOINT = "questions/{id}?site=stackoverflow";
+    private static final int DEFAULT_PARTS_LENGTH = 4;
 
     private final WebClient webClient;
 
@@ -35,10 +37,8 @@ public class StackOverflowWebClient implements StackOverflowClient {
     }
 
     @Override
-    public UpdateInfo checkForUpdate(Link link, int answerCount) {
-        QuestionResponse response = fetchQuestion(getQuestionId(link.getUrl()));
-        var question = response.items().getFirst();
-        if (question.lastUpdateTime().isAfter(link.getLastUpdatedAt())) {
+    public UpdateInfo checkForUpdate(String url, OffsetDateTime lastUpdatedAt, int answerCount, ItemResponse question) {
+        if (question.lastUpdateTime().isAfter(lastUpdatedAt)) {
             if (question.answerCount() > answerCount) {
                 return new UpdateInfo(true, question.lastUpdateTime(), "Появился новый ответ");
             }
@@ -53,7 +53,9 @@ public class StackOverflowWebClient implements StackOverflowClient {
         try {
             var uri = new URI(url);
             String[] pathParts = uri.getPath().split("/");
-            return Long.parseLong(pathParts[pathParts.length - 2]);
+            return Long.parseLong(pathParts[pathParts.length == DEFAULT_PARTS_LENGTH
+                ? (pathParts.length - 2)
+                : (pathParts.length) - 1]);
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException("Link url is invalid (Could not parse to URI)" + url, e);
         }

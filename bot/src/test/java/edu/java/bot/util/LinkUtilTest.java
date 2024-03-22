@@ -73,15 +73,15 @@ class LinkUtilTest {
             ),
             Arguments.of(
                 new URI("https://www.stackoverflow.com/search?q=unsupported"),
-                true
-            ),
-            Arguments.of(
-                new URI("https://stackoverflow.com/search?q=unsupported#anchor1"),
-                true
-            ),
-            Arguments.of(
-                new URI("stackoverflow.com/search?q=unsupported#anchor1"),
                 false
+            ),
+            Arguments.of(
+                new URI("https://stackoverflow.com/questions/123/dummy"),
+                true
+            ),
+            Arguments.of(
+                new URI("https://stackoverflow.com/questions/123"),
+                true
             ),
             Arguments.of(
                 new URI("github.com"),

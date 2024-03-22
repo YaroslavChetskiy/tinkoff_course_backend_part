@@ -1,6 +1,6 @@
 package edu.java.domain.repository;
 
-import edu.java.dto.entity.Link;
+import edu.java.dto.entity.jdbc.Link;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;

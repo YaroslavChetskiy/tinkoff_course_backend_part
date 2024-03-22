@@ -1,8 +1,6 @@
 package edu.java.client.stackoverflow;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
-import edu.java.dto.entity.Link;
-import edu.java.dto.entity.LinkType;
 import edu.java.dto.stackoverflow.QuestionResponse;
 import edu.java.dto.update.UpdateInfo;
 import java.time.Instant;
@@ -86,16 +84,13 @@ class StackOverflowWebClientTest {
 
         var expectedQuestion = EXPECTED_RESPONSE.items().getFirst();
 
+        var questionResponse = client.fetchQuestion(ID).items().getFirst();
+
         UpdateInfo actualResult = client.checkForUpdate(
-            new Link(
-                1L,
-                "https://stackoverflow.com/questions/25630159/connect-to-stack-overflow-api",
-                LinkType.STACKOVERFLOW_QUESTION,
-                null,
-                lastUpdatedAt,
-                null
-            ),
-            answerCount
+            "https://stackoverflow.com/questions/25630159/connect-to-stack-overflow-api",
+            lastUpdatedAt,
+            answerCount,
+            questionResponse
         );
 
         assertThat(actualResult).isEqualTo(new UpdateInfo(
@@ -151,6 +146,14 @@ class StackOverflowWebClientTest {
             Arguments.of(
                 "https://stackoverflow.com/questions/1/another_dummy",
                 1L
+            ),
+            Arguments.of(
+                "https://stackoverflow.com/questions/123/",
+                123L
+            ),
+            Arguments.of(
+                "https://stackoverflow.com/questions/123",
+                123L
             )
         );
     }

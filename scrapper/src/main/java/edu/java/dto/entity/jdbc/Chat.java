@@ -1,5 +1,6 @@
-package edu.java.dto.entity;
+package edu.java.dto.entity.jdbc;
 
+import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -7,9 +8,8 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Question {
+public class Chat {
 
     private Long id;
-    private Integer answerCount;
-    private Long linkId;
+    private OffsetDateTime createdAt;
 }

@@ -6,24 +6,22 @@ import edu.java.client.stackoverflow.StackOverflowClient;
 import edu.java.domain.repository.jooq.JooqChatLinkRepository;
 import edu.java.domain.repository.jooq.JooqLinkRepository;
 import edu.java.domain.repository.jooq.JooqQuestionRepository;
-import edu.java.dto.entity.Link;
-import edu.java.dto.entity.Question;
+import edu.java.dto.entity.jdbc.Link;
+import edu.java.dto.entity.jdbc.Question;
 import edu.java.dto.request.LinkUpdateRequest;
+import edu.java.dto.stackoverflow.QuestionResponse;
 import edu.java.dto.update.UpdateInfo;
 import edu.java.service.LinkUpdater;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import static edu.java.dto.entity.LinkType.GITHUB_REPO;
-import static edu.java.dto.entity.LinkType.STACKOVERFLOW_QUESTION;
-
+import static edu.java.dto.entity.jdbc.LinkType.GITHUB_REPO;
+import static edu.java.dto.entity.jdbc.LinkType.STACKOVERFLOW_QUESTION;
 
 // честно не знаю, что может поменяться, кроме как реализации chatRepository,
 // но раз в задании говорят, что нужно делать разные реализации сервисов, меняя
 // реализацию репозиториев, то сделаю
-@Service
 @RequiredArgsConstructor
 public class JooqLinkUpdater implements LinkUpdater {
 
@@ -47,10 +45,24 @@ public class JooqLinkUpdater implements LinkUpdater {
             UpdateInfo updateInfo = new UpdateInfo(false, link.getLastUpdatedAt(), "Обновлений нет");
 
             if (link.getType() == GITHUB_REPO) {
-                updateInfo = githubClient.checkForUpdate(link);
+                updateInfo = githubClient.checkForUpdate(link.getUrl(), link.getLastUpdatedAt());
             } else if (link.getType() == STACKOVERFLOW_QUESTION) {
                 Question question = questionRepository.findByLinkId(link.getId());
-                updateInfo = stackOverflowClient.checkForUpdate(link, question.getAnswerCount());
+
+                QuestionResponse.ItemResponse questionResponse = stackOverflowClient
+                    .fetchQuestion(stackOverflowClient.getQuestionId(link.getUrl()))
+                    .items().getFirst();
+
+                updateInfo = stackOverflowClient.checkForUpdate(
+                    link.getUrl(),
+                    link.getLastUpdatedAt(),
+                    question.getAnswerCount(),
+                    questionResponse
+                );
+
+                if (updateInfo.isNewUpdate()) {
+                    questionRepository.updateAnswerCountByLinkId(link.getId(), questionResponse.answerCount());
+                }
             }
 
             if (updateInfo.isNewUpdate()) {

@@ -20,4 +20,10 @@ public class QuestionSqlRequest {
         FROM scrapper_schema.question
         WHERE link_id = ?
         """;
+
+    public static final String UPDATE_ANSWER_COUNT_BY_LINK_ID_SQL = """
+        UPDATE scrapper_schema.question
+        SET answer_count = ?
+        WHERE link_id = ?
+        """;
 }

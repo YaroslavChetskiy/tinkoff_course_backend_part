@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 import static edu.java.dto.github.EventType.UNKNOWN;
 
@@ -22,13 +23,14 @@ public class GithubWebClient implements GithubClient {
 
     private final WebClient webClient;
 
-    public GithubWebClient() {
-        this(DEFAULT_BASE_URL);
+    public GithubWebClient(ExchangeFilterFunction filterFunction) {
+        this(DEFAULT_BASE_URL, filterFunction);
     }
 
-    public GithubWebClient(String baseUrl) {
+    public GithubWebClient(String baseUrl, ExchangeFilterFunction filterFunction) {
         this.webClient = WebClient.builder()
             .baseUrl(baseUrl)
+            .filter(filterFunction)
             .build();
     }
 

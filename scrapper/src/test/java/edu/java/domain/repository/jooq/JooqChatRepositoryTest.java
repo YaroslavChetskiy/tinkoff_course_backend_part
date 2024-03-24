@@ -7,6 +7,7 @@ import org.jooq.DSLContext;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import static edu.java.domain.jooq.scrapper_schema.Tables.CHAT;
@@ -20,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 // В Hibernate будут отличаться методы репозиториев, поэтому для
 // него, конечно, будут отдельные тесты
 @SpringBootTest
+@DirtiesContext
 class JooqChatRepositoryTest extends IntegrationTest {
 
     @Autowired

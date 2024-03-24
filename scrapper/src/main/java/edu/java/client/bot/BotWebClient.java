@@ -4,6 +4,7 @@ import edu.java.dto.request.LinkUpdateRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 
 @Component
@@ -11,9 +12,10 @@ public class BotWebClient implements BotClient {
 
     private final WebClient webClient;
 
-    public BotWebClient(@Value("${bot.base-url}") String baseUrl) {
+    public BotWebClient(@Value("${bot.base-url}") String baseUrl, ExchangeFilterFunction filterFunction) {
         this.webClient = WebClient.builder()
             .baseUrl(baseUrl)
+            .filter(filterFunction)
             .build();
     }
 

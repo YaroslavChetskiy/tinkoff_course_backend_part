@@ -1,5 +1,7 @@
 package edu.java.domain.repository.jdbc;
 
+import edu.java.configuration.ApplicationConfig;
+import edu.java.configuration.ClientConfiguration;
 import edu.java.dto.entity.jdbc.Link;
 import edu.java.dto.entity.jdbc.LinkType;
 import edu.java.scrapper.IntegrationTest;
@@ -12,11 +14,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
+@DirtiesContext
 class JdbcLinkRepositoryTest extends IntegrationTest {
 
     @Autowired

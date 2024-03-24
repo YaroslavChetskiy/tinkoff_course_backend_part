@@ -1,6 +1,7 @@
 package edu.java.client.github;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
+import edu.java.configuration.retry.RetryConfigProperties;
 import edu.java.dto.github.EventResponse;
 import edu.java.dto.github.EventResponse.Payload;
 import edu.java.dto.github.EventResponse.Payload.Comment;
@@ -10,22 +11,35 @@ import edu.java.dto.github.EventResponse.Payload.PullRequest;
 import edu.java.dto.github.RepositoryResponse;
 import edu.java.dto.update.UpdateInfo;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static edu.java.client.github.GithubJsonResponse.EVENTS_RESPONSE_BODY;
 import static edu.java.client.github.GithubJsonResponse.REPO_RESPONSE_BODY;
 import static edu.java.dto.github.EventType.ISSUE_COMMENT;
 import static edu.java.dto.github.EventType.PULL_REQUEST;
 import static edu.java.dto.github.EventType.PUSH;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@SpringBootTest
+@DirtiesContext
 class GithubWebClientTest {
 
     private static final String URL = "/repos/YaroslavChetskiy/tinkoff_course_backend_part";
@@ -76,10 +90,21 @@ class GithubWebClientTest {
 
     private static WireMockServer wireMockServer;
 
+    @Autowired
+    private ExchangeFilterFunction filterFunction;
+
+    @Autowired
+    private RetryConfigProperties retryConfigProperties;
+
     @BeforeAll
     static void prepare() {
         wireMockServer = new WireMockServer(wireMockConfig().dynamicPort());
         wireMockServer.start();
+    }
+
+    @BeforeEach
+    void reset() {
+        wireMockServer.resetAll();
     }
 
     @Test
@@ -92,10 +117,58 @@ class GithubWebClientTest {
                 .withBody(REPO_RESPONSE_BODY))
         );
 
-        GithubClient client = new GithubWebClient(wireMockServer.baseUrl());
+        GithubClient client = new GithubWebClient(wireMockServer.baseUrl(), filterFunction);
         var repositoryResponse = client.fetchRepository(OWNER, REPOSITORY);
 
         assertThat(repositoryResponse).isEqualTo(REPO_EXPECTED_RESPONSE);
+    }
+
+    @Test
+    @DisplayName("Получение информации о репозитории с механизмом повторного запроса")
+    void getCorrectResponseInFetchRepositoryWithRetry() {
+        var retryAbleCode = new ArrayList<>(retryConfigProperties.codes()).getFirst();
+        wireMockServer.stubFor(get(urlEqualTo(URL))
+            .inScenario("Retry scenario")
+            .whenScenarioStateIs(STARTED)
+            .willSetStateTo("Retry succeeded")
+            .willReturn(aResponse()
+                .withStatus(retryAbleCode)
+                .withHeader("Content-Type", "application/json")
+            )
+        );
+
+        wireMockServer.stubFor(get(urlEqualTo(URL))
+            .inScenario("Retry scenario")
+            .whenScenarioStateIs("Retry succeeded")
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody(REPO_RESPONSE_BODY)
+            )
+        );
+
+        GithubClient client = new GithubWebClient(wireMockServer.baseUrl(), filterFunction);
+        var repositoryResponse = client.fetchRepository(OWNER, REPOSITORY);
+
+        assertThat(repositoryResponse).isEqualTo(REPO_EXPECTED_RESPONSE);
+        wireMockServer.verify(2, getRequestedFor((urlEqualTo(URL))));
+    }
+
+    @Test
+    @DisplayName("Получение ошибки при достижении максимального количества попыток повторного запроса")
+    void getCorrectErrorResponseAfterMaxRetry() {
+        var retryAbleCode = new ArrayList<>(retryConfigProperties.codes()).getFirst();
+        wireMockServer.stubFor(get(urlEqualTo(URL))
+            .willReturn(aResponse()
+                .withStatus(retryAbleCode)
+                .withHeader("Content-Type", "application/json"))
+        );
+
+        GithubClient client = new GithubWebClient(wireMockServer.baseUrl(), filterFunction);
+
+        assertThrows(WebClientResponseException.class, () -> client.fetchRepository(OWNER, REPOSITORY));
+
+        wireMockServer.verify(retryConfigProperties.maxAttempts() + 1, getRequestedFor((urlEqualTo(URL))));
     }
 
     @Test
@@ -108,7 +181,7 @@ class GithubWebClientTest {
                 .withBody(EVENTS_RESPONSE_BODY))
         );
 
-        GithubClient client = new GithubWebClient(wireMockServer.baseUrl());
+        GithubClient client = new GithubWebClient(wireMockServer.baseUrl(), filterFunction);
         var eventsResponse = client.fetchEvents(OWNER, REPOSITORY);
 
         assertThat(eventsResponse).isEqualTo(EVENTS_EXPECTED_RESPONSE);
@@ -131,7 +204,7 @@ class GithubWebClientTest {
                 .withBody(EVENTS_RESPONSE_BODY))
         );
 
-        GithubClient client = new GithubWebClient(wireMockServer.baseUrl());
+        GithubClient client = new GithubWebClient(wireMockServer.baseUrl(), filterFunction);
         UpdateInfo actualResult = client.checkForUpdate(
             "https://github.com/YaroslavChetskiy/tinkoff_course_backend_part",
             REPO_EXPECTED_RESPONSE.lastPushedTime().minusDays(2)

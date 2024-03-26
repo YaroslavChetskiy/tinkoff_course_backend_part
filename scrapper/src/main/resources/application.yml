@@ -5,16 +5,52 @@ app:
     interval: 5000
     force-check-delay: 5000
 
+client:
+  retry:
+    max-attempts: 2
+    back-off-type: "constant"
+    increment: 500
+    delay: 1000
+    max-delay: 5000
+    multiplier: 1.5
+    codes: 500, 501, 502, 503, 504
+
 spring:
   application:
     name: scrapper
   liquibase:
     enabled: false
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
   datasource:
     url: jdbc:postgresql://localhost:5432/scrapper
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
+  cache:
+    cache-names:
+      - buckets
+    caffeine:
+      spec: maximumSize=100000,expireAfterAccess=3600s
+    jcache:
+      provider: com.github.benmanes.caffeine.jcache.spi.CaffeineCachingProvider
+
+bucket4j:
+  enabled: true
+  filters:
+    - cache-name: buckets
+      url: (/tg-chat.*)|(/links.*)
+      strategy: first
+      http-response-body: "{ \"status\": 429, \"error\": \"Too Many Requests\", \"message\": \"You have exhausted your API Request Quota\" }"
+      rate-limits:
+        - cache-key: "getRemoteAddr()"
+          bandwidths:
+            - capacity: 10
+              time: 10
+              unit: seconds
+              refill-speed: interval
 
 springdoc:
   swagger-ui:

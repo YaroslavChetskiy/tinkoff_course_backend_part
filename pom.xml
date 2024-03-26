@@ -47,6 +47,12 @@
 
         <!-- JOOQ -->
         <jooq.version>3.19.6</jooq.version>
+
+        <!-- Bucket4j -->
+        <bucket4j.version>0.12.3</bucket4j.version>
+
+        <!-- Caffeine -->
+        <caffeine.version>3.1.8</caffeine.version>
     </properties>
 
     <modules>
@@ -147,6 +153,36 @@
             <artifactId>jooq-meta-extensions-liquibase</artifactId>
             <version>${jooq.version}</version>
         </dependency>
+
+
+        <!-- Bucket4j -->
+        <dependency>
+            <groupId>com.giffing.bucket4j.spring.boot.starter</groupId>
+            <artifactId>bucket4j-spring-boot-starter</artifactId>
+            <version>${bucket4j.version}</version>
+        </dependency>
+
+        <!-- Cache -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+            <version>${spring-boot.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.cache</groupId>
+            <artifactId>cache-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>${caffeine.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>jcache</artifactId>
+            <version>${caffeine.version}</version>
+        </dependency>
+
     </dependencies>
 
     <build>

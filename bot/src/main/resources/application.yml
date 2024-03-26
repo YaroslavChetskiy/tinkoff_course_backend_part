@@ -1,6 +1,16 @@
 app:
   telegram-token: ${APP_TELEGRAM_TOKEN}
 
+client:
+  retry:
+    max-attempts: 2
+    back-off-type: "constant"
+    increment: 500
+    delay: 1000
+    max-delay: 5000
+    multiplier: 1.5
+    codes: 500, 501, 502, 503, 504
+
 spring:
   application:
     name: bot
@@ -8,6 +18,28 @@ spring:
     time-zone: UTC
   liquibase:
     enabled: false
+  cache:
+    cache-names:
+      - buckets
+    caffeine:
+      spec: maximumSize=100000,expireAfterAccess=3600s
+    jcache:
+      provider: com.github.benmanes.caffeine.jcache.spi.CaffeineCachingProvider
+
+bucket4j:
+  enabled: true
+  filters:
+    - cache-name: buckets
+      url: /updates.*
+      strategy: first
+      http-response-body: "{ \"status\": 429, \"error\": \"Too Many Requests\", \"message\": \"You have exhausted your API Request Quota\" }"
+      rate-limits:
+        - cache-key: "getRemoteAddr()"
+          bandwidths:
+            - capacity: 10
+              time: 10
+              unit: seconds
+              refill-speed: interval
 
 springdoc:
   swagger-ui:

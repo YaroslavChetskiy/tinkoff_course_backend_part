@@ -6,6 +6,7 @@ import edu.java.dto.update.UpdateInfo;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.OffsetDateTime;
+import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 
 public class StackOverflowWebClient implements StackOverflowClient {
@@ -17,13 +18,14 @@ public class StackOverflowWebClient implements StackOverflowClient {
 
     private final WebClient webClient;
 
-    public StackOverflowWebClient() {
-        this(DEFAULT_BASE_URL);
+    public StackOverflowWebClient(ExchangeFilterFunction filterFunction) {
+        this(DEFAULT_BASE_URL, filterFunction);
     }
 
-    public StackOverflowWebClient(String baseUrl) {
+    public StackOverflowWebClient(String baseUrl, ExchangeFilterFunction filterFunction) {
         this.webClient = WebClient.builder()
             .baseUrl(baseUrl)
+            .filter(filterFunction)
             .build();
     }
 

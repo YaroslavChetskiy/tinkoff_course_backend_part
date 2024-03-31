@@ -14,7 +14,8 @@ public record ApplicationConfig(
     @NotNull
     Scheduler scheduler,
     @Value("${app.database-access-type}")
-    @NotNull AccessType databaseAccessType
+    @NotNull AccessType databaseAccessType,
+    Boolean useQueue
 ) {
     public record Scheduler(boolean enable, @NotNull Duration interval, @NotNull Duration forceCheckDelay) {
     }

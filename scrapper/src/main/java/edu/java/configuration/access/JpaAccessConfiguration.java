@@ -1,6 +1,5 @@
 package edu.java.configuration.access;
 
-import edu.java.client.bot.BotClient;
 import edu.java.client.github.GithubClient;
 import edu.java.client.stackoverflow.StackOverflowClient;
 import edu.java.domain.repository.jpa.JpaChatLinkRepository;
@@ -12,6 +11,7 @@ import edu.java.service.LinkUpdater;
 import edu.java.service.jpa.JpaChatService;
 import edu.java.service.jpa.JpaLinkService;
 import edu.java.service.jpa.JpaLinkUpdater;
+import edu.java.service.notification.NotificationService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -46,14 +46,14 @@ public class JpaAccessConfiguration {
         JpaLinkRepository linkRepository,
         StackOverflowClient stackOverflowClient,
         GithubClient githubClient,
-        BotClient botClient
+        NotificationService notificationService
     ) {
         return new JpaLinkUpdater(
             chatLinkRepository,
             linkRepository,
             stackOverflowClient,
             githubClient,
-            botClient
+            notificationService
         );
     }
 }

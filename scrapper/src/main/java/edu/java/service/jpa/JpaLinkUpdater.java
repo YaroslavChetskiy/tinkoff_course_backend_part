@@ -1,6 +1,5 @@
 package edu.java.service.jpa;
 
-import edu.java.client.bot.BotClient;
 import edu.java.client.github.GithubClient;
 import edu.java.client.stackoverflow.StackOverflowClient;
 import edu.java.domain.repository.jpa.JpaChatLinkRepository;
@@ -12,13 +11,16 @@ import edu.java.dto.request.LinkUpdateRequest;
 import edu.java.dto.stackoverflow.QuestionResponse;
 import edu.java.dto.update.UpdateInfo;
 import edu.java.service.LinkUpdater;
+import edu.java.service.notification.NotificationService;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
+@Slf4j
 public class JpaLinkUpdater implements LinkUpdater {
 
     private static final Duration THRESHOLD = Duration.ofDays(1L);
@@ -27,7 +29,8 @@ public class JpaLinkUpdater implements LinkUpdater {
     private final JpaLinkRepository linkRepository;
     private final StackOverflowClient stackOverflowClient;
     private final GithubClient githubClient;
-    private final BotClient botClient;
+    //    private final BotClient botClient;
+    private final NotificationService notificationService;
 
     @Transactional
     @Override
@@ -58,7 +61,8 @@ public class JpaLinkUpdater implements LinkUpdater {
             }
 
             if (updateInfo.isNewUpdate()) {
-                botClient.sendUpdate(new LinkUpdateRequest(
+                log.info("SEND UPDATE");
+                notificationService.sendUpdateNotification(new LinkUpdateRequest(
                         link.getId(),
                         link.getUrl(),
                         updateInfo.message(),

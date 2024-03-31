@@ -1,5 +1,7 @@
 app:
   telegram-token: ${APP_TELEGRAM_TOKEN}
+  scrapper-topic:
+    name: messages.updates
 
 client:
   retry:
@@ -40,6 +42,22 @@ bucket4j:
               time: 10
               unit: seconds
               refill-speed: interval
+kafka:
+  group-id: messages-group
+  bootstrap-servers: localhost:29091,localhost:29092,localhost:9093
+  auto-offset-reset: latest
+  max-poll-interval-ms: 300_000
+  enable-auto-commit: false
+  concurrency: 2
+  dlq:
+    topic: messages.updates_dlq
+    replication-factor: 2
+    partitions: 2
+    acks-mode: all
+    delivery-timeout: 60_000
+    linger-ms: 12_000
+    batch-size: 100_000
+    max-in-flight-per-connection: 5
 
 springdoc:
   swagger-ui:

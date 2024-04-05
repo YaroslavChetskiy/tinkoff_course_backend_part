@@ -1,6 +1,5 @@
 package edu.java.configuration.access;
 
-import edu.java.client.bot.BotClient;
 import edu.java.client.github.GithubClient;
 import edu.java.client.stackoverflow.StackOverflowClient;
 import edu.java.domain.repository.jooq.JooqChatLinkRepository;
@@ -13,6 +12,7 @@ import edu.java.service.LinkUpdater;
 import edu.java.service.jooq.JooqChatService;
 import edu.java.service.jooq.JooqLinkService;
 import edu.java.service.jooq.JooqLinkUpdater;
+import edu.java.service.notification.NotificationService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -48,7 +48,7 @@ public class JooqAccessConfiguration {
         JooqQuestionRepository questionRepository,
         StackOverflowClient stackOverflowClient,
         GithubClient githubClient,
-        BotClient botClient
+        NotificationService notificationService
     ) {
         return new JooqLinkUpdater(
             chatLinkRepository,
@@ -56,7 +56,7 @@ public class JooqAccessConfiguration {
             questionRepository,
             stackOverflowClient,
             githubClient,
-            botClient
+            notificationService
         );
     }
 

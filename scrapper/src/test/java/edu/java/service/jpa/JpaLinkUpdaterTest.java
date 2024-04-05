@@ -1,6 +1,5 @@
 package edu.java.service.jpa;
 
-import edu.java.client.bot.BotClient;
 import edu.java.client.github.GithubClient;
 import edu.java.client.stackoverflow.StackOverflowClient;
 import edu.java.domain.repository.jpa.JpaChatLinkRepository;
@@ -12,6 +11,7 @@ import edu.java.dto.request.LinkUpdateRequest;
 import edu.java.dto.stackoverflow.QuestionResponse;
 import edu.java.dto.stackoverflow.QuestionResponse.ItemResponse;
 import edu.java.dto.update.UpdateInfo;
+import edu.java.service.notification.NotificationService;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,8 +45,11 @@ class JpaLinkUpdaterTest {
     @Mock
     private GithubClient githubClient;
 
+//    @Mock
+//    private BotClient botClient;
+
     @Mock
-    private BotClient botClient;
+    private NotificationService notificationService;
 
     @InjectMocks
     private JpaLinkUpdater linkUpdater;
@@ -104,7 +107,7 @@ class JpaLinkUpdaterTest {
 
         assertEquals(2, updatedCount);
 
-        verify(botClient, times(2)).sendUpdate(any(LinkUpdateRequest.class));
+        verify(notificationService, times(2)).sendUpdateNotification(any(LinkUpdateRequest.class));
         verify(chatLinkRepository, times(2)).findAllChatIdsByLinkId(anyLong());
         verify(linkRepository, times(2)).updateLastUpdatedAtAndCheckedAtByUrl(
             anyString(),

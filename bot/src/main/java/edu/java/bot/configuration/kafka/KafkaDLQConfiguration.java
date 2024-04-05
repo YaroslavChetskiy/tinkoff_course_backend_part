@@ -1,12 +1,13 @@
 package edu.java.bot.configuration.kafka;
 
+import edu.java.bot.serializer.CompositeUpdateSerializer;
+import jakarta.validation.ConstraintViolationException;
 import jakarta.xml.bind.ValidationException;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -44,7 +45,7 @@ public class KafkaDLQConfiguration {
     @Bean
     public CommonErrorHandler errorHandler(DeadLetterPublishingRecoverer recoverer) {
         var errorHandler = new DefaultErrorHandler(recoverer);
-        errorHandler.addNotRetryableExceptions(ValidationException.class);
+        errorHandler.addNotRetryableExceptions(ValidationException.class, ConstraintViolationException.class);
         return errorHandler;
     }
 
@@ -60,7 +61,7 @@ public class KafkaDLQConfiguration {
             kafkaProperties.dlq().maxInFlightPerConnection()
         );
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, IntegerSerializer.class);
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, CompositeUpdateSerializer.class);
         return props;
     }
 }

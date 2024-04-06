@@ -9,6 +9,8 @@ import edu.java.bot.command.ListCommand;
 import edu.java.bot.command.StartCommand;
 import edu.java.bot.command.TrackCommand;
 import edu.java.bot.command.UntrackCommand;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -23,7 +25,10 @@ public class SimpleMessageProcessor implements UserMessageProcessor {
 
     private final List<Command> commands = new ArrayList<>();
 
-    public SimpleMessageProcessor(ScrapperClient scrapperClient) {
+    private final Counter messageCounter;
+    private final MeterRegistry meterRegistry;
+
+    public SimpleMessageProcessor(ScrapperClient scrapperClient, MeterRegistry meterRegistry) {
         commands.addAll(List.of(
             new StartCommand(this, scrapperClient),
             new HelpCommand(this, scrapperClient),
@@ -31,14 +36,28 @@ public class SimpleMessageProcessor implements UserMessageProcessor {
             new UntrackCommand(this, scrapperClient),
             new ListCommand(this, scrapperClient)
         ));
+        this.meterRegistry = meterRegistry;
+        this.messageCounter = meterRegistry.counter("messages_processed_total");
     }
 
     @Override
     public SendMessage process(Update update) {
-        Optional<Command> command = commands.stream()
+        Optional<Command> commandOptional = commands.stream()
             .filter(c -> c.supports(update))
             .findFirst();
-        return command.map(value -> value.handle(update))
+
+        messageCounter.increment();
+
+        return commandOptional.map(value -> {
+                    meterRegistry.counter(
+                            "command_processed_total",
+                            "command_type",
+                            value.command()
+                        )
+                        .increment();
+                    return value.handle(update);
+                }
+            )
             .orElseGet(() -> new SendMessage(update.message().chat().id(), UNKNOWN_COMMAND));
     }
 

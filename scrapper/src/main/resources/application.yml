@@ -18,6 +18,21 @@ kafka:
   max-in-flight-per-connection: 5
   enable-idempotence: true
 
+management:
+  server:
+    port: 8081
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  endpoints:
+    web:
+      base-path: /
+      exposure:
+        include: "info,health,prometheus"
+      path-mapping:
+        prometheus: "metrics"
+
+
 
 client:
   retry:

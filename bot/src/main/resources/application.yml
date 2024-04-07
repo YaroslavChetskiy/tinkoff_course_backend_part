@@ -13,6 +13,20 @@ client:
     multiplier: 1.5
     codes: 500, 501, 502, 503, 504
 
+management:
+  server:
+    port: 8091
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  endpoints:
+    web:
+      base-path: /
+      exposure:
+        include: "info,health,prometheus"
+      path-mapping:
+        prometheus: "metrics"
+
 spring:
   application:
     name: bot

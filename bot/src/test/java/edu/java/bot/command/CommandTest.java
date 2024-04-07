@@ -10,6 +10,7 @@ import edu.java.bot.model.dto.request.RemoveLinkRequest;
 import edu.java.bot.model.dto.response.LinkResponse;
 import edu.java.bot.model.dto.response.ListLinksResponse;
 import edu.java.bot.model.entity.UserChat;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
@@ -19,8 +20,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -82,14 +81,16 @@ class CommandTest {
     private static final Message MESSAGE = mock(Message.class);
     private static final Update UPDATE = mock(Update.class);
 
-    @Mock
     private static ScrapperClient scrapperClient;
 
-    @InjectMocks
     private static SimpleMessageProcessor processor;
 
     @BeforeAll
     static void prepare() {
+        scrapperClient = mock(ScrapperClient.class);
+        SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
+        processor = new SimpleMessageProcessor(scrapperClient, meterRegistry);
+
         when(CHAT.id()).thenReturn(USER_USER_CHAT.getId());
         when(MESSAGE.chat()).thenReturn(CHAT);
         when(UPDATE.message()).thenReturn(MESSAGE);

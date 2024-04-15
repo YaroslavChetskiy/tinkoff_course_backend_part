@@ -8,7 +8,7 @@
     </parent>
 
     <artifactId>scrapper-jooq</artifactId>
-    <version>${revision</version>
+    <version>${revision}</version>
 
     <dependencies>
         <dependency>
